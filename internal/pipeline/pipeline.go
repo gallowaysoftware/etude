@@ -67,6 +67,7 @@ func Build(cfg Config) (*vamp.Pipeline, error) {
 	p.RequireService("kokoro-fastapi", "http://127.0.0.1:8880",
 		"OpenAI-compatible TTS server (Kokoro). Activated as the 'tts_kokoro' vibe profile.",
 		"vibe start tts_kokoro")
+	p.RequireProfile("long_form")
 	p.RequireGPUMemory("32GB")
 	p.RequireDiskSpace("20GB per module run (intermediate artefacts + 500MB final deliverables)")
 	p.Note("Tested against Qwen3.6-27B-MTP @ 131k context for the long_form capability and Gemma 3 27B + mmproj for vision.")
