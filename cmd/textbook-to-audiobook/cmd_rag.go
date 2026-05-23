@@ -36,6 +36,43 @@ textbook-to-audiobook run's processed_lessons.json:
 	cmd.AddCommand(ragRunCmd())
 	cmd.AddCommand(ragPackCmd())
 	cmd.AddCommand(ragPushCmd())
+	cmd.AddCommand(ragAnkiCmd())
+	return cmd
+}
+
+func ragAnkiCmd() *cobra.Command {
+	var (
+		flashcardsFile string
+		outFile        string
+		deckName       string
+	)
+	cmd := &cobra.Command{
+		Use:   "anki",
+		Short: "Convert flashcards.tsv into a .apkg Anki deck.",
+		Long: `anki produces an Anki-importable .apkg from flashcards.tsv. Open Anki
+on any platform (desktop or mobile), File > Import, pick the .apkg —
+spaced-repetition drilling, sync across devices via AnkiWeb.
+
+Cards use stable deterministic IDs derived from front+back text, so
+re-importing an updated deck updates existing cards instead of
+duplicating.
+
+Requires Python 3 + the genanki package. The Go side prefers
+~/.local/state/textbook-to-audiobook/rag-venv if it exists (same
+convention as rag pack); set TEXTBOOK_RAG_PYTHON to override.
+`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return rag.PackAnki(rag.AnkiConfig{
+				FlashcardsFile: flashcardsFile,
+				OutFile:        outFile,
+				DeckName:       deckName,
+			})
+		},
+	}
+	cmd.Flags().StringVar(&flashcardsFile, "flashcards", "", "Path to flashcards.tsv (required).")
+	cmd.Flags().StringVar(&outFile, "out", "", "Output .apkg path (defaults to anki_deck.apkg next to flashcards.tsv).")
+	cmd.Flags().StringVar(&deckName, "deck-name", "CIBD Study", "Deck title shown in Anki.")
+	_ = cmd.MarkFlagRequired("flashcards")
 	return cmd
 }
 
@@ -142,43 +179,52 @@ Python 3 + the chromadb package must be on $PATH.
 
 func ragPushCmd() *cobra.Command {
 	var (
-		chunksFile string
-		owuiURL    string
-		owuiToken  string
-		collection string
+		chunksFile  string
+		lessonsFile string
+		owuiURL     string
+		owuiToken   string
+		collection  string
 	)
 	cmd := &cobra.Command{
 		Use:   "push",
 		Short: "Push the RAG export to Open WebUI's Knowledge API.",
-		Long: `push reads chunks.jsonl and POSTs each chunk as a Knowledge entry
-to Open WebUI under the named collection. Idempotent on (collection,
-chunk_id): re-runs upsert rather than duplicate.
+		Long: `push uploads one richly-formatted markdown file per lesson into
+Open WebUI's Knowledge feature, attaching them all to the named
+collection. Each lesson's prose + definitions + key numbers +
+processes + study questions become one queryable document.
 
-Note: Open WebUI re-embeds content with its own embedding model on
-ingest, so the embeddings in chunks.jsonl are NOT reused on this
-path. The chroma_db export (via 'rag pack') preserves the original
-embeddings if model-consistency matters.
+Open WebUI re-embeds the uploaded content with its own configured
+model (default BAAI/bge-m3 in the vibe rag profile), so the
+embeddings in chunks.jsonl are NOT reused on this path. If you
+need bge-large parity at retrieval time, use the chroma_db export
+from 'rag pack' instead.
+
+Get an API token from Open WebUI: Settings → Account → API Keys.
+Pass it via --owui-token or the OPEN_WEBUI_TOKEN env var.
 `,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if owuiToken == "" {
 				owuiToken = os.Getenv("OPEN_WEBUI_TOKEN")
 			}
 			if owuiToken == "" {
-				return fmt.Errorf("--owui-token or OPEN_WEBUI_TOKEN env var required")
+				return fmt.Errorf("--owui-token or OPEN_WEBUI_TOKEN env var required (get one at Open WebUI Settings → Account → API Keys)")
 			}
 			return rag.Push(cmd.Context(), rag.PushConfig{
-				ChunksFile: chunksFile,
-				OWUIURL:    owuiURL,
-				OWUIToken:  owuiToken,
-				Collection: collection,
+				ChunksFile:  chunksFile,
+				LessonsFile: lessonsFile,
+				OWUIURL:     owuiURL,
+				OWUIToken:   owuiToken,
+				Collection:  collection,
 			})
 		},
 	}
 	cmd.Flags().StringVar(&chunksFile, "chunks", "", "Path to chunks.jsonl (required).")
+	cmd.Flags().StringVar(&lessonsFile, "lessons", "", "Path to processed_lessons.json (required — used for per-lesson grouping context).")
 	cmd.Flags().StringVar(&owuiURL, "owui-url", "http://127.0.0.1:14001", "Open WebUI base URL.")
 	cmd.Flags().StringVar(&owuiToken, "owui-token", "", "Open WebUI API token (or OPEN_WEBUI_TOKEN env).")
 	cmd.Flags().StringVar(&collection, "collection", "", "Open WebUI Knowledge collection name (required).")
 	_ = cmd.MarkFlagRequired("chunks")
+	_ = cmd.MarkFlagRequired("lessons")
 	_ = cmd.MarkFlagRequired("collection")
 	return cmd
 }
