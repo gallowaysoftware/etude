@@ -303,7 +303,7 @@ func Build(cfg Config) (*vamp.Pipeline, error) {
 		Foreach(flattenChunks, "chunk").
 		Engine(vamp.AudioEngineKokoro).
 		Voice(cfg.Voice).
-		TextTemplate("{{.chunk.text}}").
+		TextTemplate(`{{ ttsNormalize .chunk.text "" }}`).
 		Output("audio/{{.chunk.unit_id}}/chunk_{{.i}}.wav")
 
 	// Per-PARENT-unit MP3 concat. Foreach over the dedup'd parents.
