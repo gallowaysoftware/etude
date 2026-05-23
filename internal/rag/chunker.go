@@ -130,6 +130,3 @@ func sortedKeys(m map[string]string) []string {
 	return out
 }
 
-// Compile-time sanity check: strings.Builder used elsewhere in this
-// file; keeping the import live without strings.NewReader / etc.
-var _ = strings.Builder{}
