@@ -22,11 +22,9 @@ go install github.com/gallowaysoftware/textbook-to-audiobook/cmd/textbook-to-aud
 # 3. see what the host needs
 textbook-to-audiobook requirements
 
-# 4. start the external services it expects
-vibe start searxng       # web-search sidecar
-vibe start tts_kokoro    # TTS sidecar
-vibe start comfyui       # image-gen sidecar (cover art)
-vibe start long_form     # the active LLM profile
+# 4. check what's missing (read-only), then bring everything up
+textbook-to-audiobook doctor      # reports each declared service: ✓ or ✗
+textbook-to-audiobook activate    # `vibe start`s every required profile
 
 # 5. run
 textbook-to-audiobook run \
@@ -34,6 +32,8 @@ textbook-to-audiobook run \
   --module-num 1 \
   --topic "introductory thermodynamics"
 ```
+
+`activate` reads the pipeline's RequireProfile + RequireService declarations and brings up everything via vibe in one go — same as running `vibe start <each-profile>` by hand, but the pipeline tells vibe what it needs. `--skip-active` brings up only the CPU sidecars when the GPU is busy elsewhere.
 
 Run time: ~5 hours on a single RTX 5090 for a 60-lesson module. Deliverables land in `$XDG_STATE_HOME/vamp/runs/textbook-to-audiobook_<timestamp>/`.
 
