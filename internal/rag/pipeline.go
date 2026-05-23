@@ -47,6 +47,12 @@ type Config struct {
 	// SkipEquations skips the equation-extraction pass. Useful for
 	// the same reason.
 	SkipEquations bool
+	// Resume, when true, loads <OutDir>/chunks_partial.jsonl if it
+	// exists and carries over completed enrichment + embedding for
+	// chunks whose source text hasn't changed. A killed run can
+	// pick up nearly where it left off — at most one chunk's worth
+	// of repeated work (the one in-flight at kill time).
+	Resume bool
 }
 
 // Run executes the full RAG export against one module's
@@ -124,14 +130,53 @@ func Run(ctx context.Context, cfg Config) error {
 	logf("chunks: total=%d (prose %d / def %d / key_num %d / process %d)",
 		len(chunks), len(chunks)-numDefs-numKN-numProcs, numDefs, numKN, numProcs)
 
+	// ---- resume from checkpoint ----
+	if cfg.Resume {
+		prior, err := loadCheckpoint(cfg.OutDir)
+		if err != nil {
+			return fmt.Errorf("load checkpoint: %w", err)
+		}
+		if len(prior) > 0 {
+			var stats checkpointStats
+			chunks, stats = applyCheckpoint(chunks, prior)
+			logf("resume: carried %d enriched + %d embedded chunks from checkpoint",
+				stats.carriedEnrichment, stats.carriedEmbedding)
+		} else {
+			logf("resume: no checkpoint found at %s (starting fresh)",
+				filepath.Join(cfg.OutDir, CheckpointFilename))
+		}
+	}
+
+	// Checkpoint hook — writes the chunks slice to chunks_partial.jsonl
+	// after each completed chunk. atomic write-then-rename so a crash
+	// during checkpoint doesn't corrupt the file the next --resume reads.
+	checkpoint := func() {
+		if err := writeCheckpoint(cfg.OutDir, chunks); err != nil {
+			// Non-fatal: a failed checkpoint write means the next resume
+			// has slightly more work to redo, not that the run fails.
+			logf("warning: checkpoint write failed: %v", err)
+		}
+	}
+
 	// ---- enrich ----
 	llm := NewLLMClient(cfg.LLMURL, cfg.LLMModel)
 	if cfg.SkipEnrichment {
 		logf("enrichment SKIPPED (--skip-enrichment)")
 	} else {
-		logf("enriching prose chunks via %s (model=%s)", cfg.LLMURL, cfg.LLMModel)
+		alreadyDone := 0
+		for _, c := range chunks {
+			if c.Type == ChunkTypeProse && c.Enrichment != nil {
+				alreadyDone++
+			}
+		}
+		if alreadyDone > 0 {
+			logf("enriching prose chunks (skipping %d already-enriched from checkpoint)", alreadyDone)
+		} else {
+			logf("enriching prose chunks via %s (model=%s)", cfg.LLMURL, cfg.LLMModel)
+		}
 		err := EnrichChunks(ctx, llm, chunks, func(done, total int) {
 			logf("  enriched %d/%d", done, total)
+			checkpoint()
 		})
 		if err != nil {
 			return fmt.Errorf("enrich: %w", err)
@@ -151,16 +196,36 @@ func Run(ctx context.Context, cfg Config) error {
 	}
 
 	// ---- embed ----
-	logf("embedding chunks via %s (model=%s)", cfg.EmbedURL, cfg.EmbedModel)
+	alreadyEmbedded := 0
+	for _, c := range chunks {
+		if len(c.Embedding) > 0 {
+			alreadyEmbedded++
+		}
+	}
+	if alreadyEmbedded > 0 {
+		logf("embedding chunks (skipping %d already-embedded from checkpoint)", alreadyEmbedded)
+	} else {
+		logf("embedding chunks via %s (model=%s)", cfg.EmbedURL, cfg.EmbedModel)
+	}
 	emb := NewEmbedClient(cfg.EmbedURL, cfg.EmbedModel)
 	err = EmbedChunks(ctx, emb, chunks, func(done, total int) {
 		if done == 1 || done%50 == 0 || done == total {
 			logf("  embedded %d/%d", done, total)
 		}
+		// Embedding finishes in seconds-per-chunk; checkpointing
+		// every 50 instead of every chunk avoids hammering the disk
+		// without meaningfully increasing the kill-loss window.
+		if done%50 == 0 {
+			checkpoint()
+		}
 	})
 	if err != nil {
 		return fmt.Errorf("embed: %w", err)
 	}
+	// Final checkpoint after the embed pass — covers the case where
+	// the run completes normally so the checkpoint file's a faithful
+	// snapshot for any future --resume rerun.
+	checkpoint()
 
 	// ---- write artefacts ----
 	type artefact struct {

@@ -88,6 +88,7 @@ func ragRunCmd() *cobra.Command {
 		chunkMaxChars  int
 		skipEnrichment bool
 		skipEquations  bool
+		resume         bool
 	)
 	cmd := &cobra.Command{
 		Use:   "run",
@@ -126,6 +127,7 @@ prior textbook run, --out at a directory under the same run.
 				ChunkMaxChars:  chunkMaxChars,
 				SkipEnrichment: skipEnrichment,
 				SkipEquations:  skipEquations,
+				Resume:         resume,
 			})
 		},
 	}
@@ -139,6 +141,7 @@ prior textbook run, --out at a directory under the same run.
 	cmd.Flags().IntVar(&chunkMaxChars, "chunk-max-chars", rag.DefaultChunkMaxChars, "Max chars per prose chunk.")
 	cmd.Flags().BoolVar(&skipEnrichment, "skip-enrichment", false, "Skip the LLM enrichment pass (faster iteration on chunking/embedding).")
 	cmd.Flags().BoolVar(&skipEquations, "skip-equations", false, "Skip the equation-extraction LLM pass.")
+	cmd.Flags().BoolVar(&resume, "resume", false, "Load <out>/chunks_partial.jsonl if it exists and skip already-completed enrichment + embedding for chunks whose source text matches.")
 	_ = cmd.MarkFlagRequired("lessons")
 	_ = cmd.MarkFlagRequired("out")
 	_ = cmd.MarkFlagRequired("module")

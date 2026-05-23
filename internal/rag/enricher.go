@@ -169,6 +169,11 @@ func EnrichChunk(ctx context.Context, c *LLMClient, chunk *Chunk) error {
 // for the same reason EmbedChunks is — single-stream LLM calls
 // avoid VRAM contention, and on a 27B model the per-chunk latency
 // (~30s) makes pipelining gains marginal.
+//
+// Already-enriched chunks (Enrichment != nil) are skipped — this
+// is the resume path. The progress callback counts completed
+// chunks INCLUDING the ones carried over from checkpoint so the
+// progress display matches the user's mental model.
 func EnrichChunks(ctx context.Context, c *LLMClient, chunks []Chunk, onProgress func(done, total int)) error {
 	total := 0
 	for i := range chunks {
@@ -179,6 +184,10 @@ func EnrichChunks(ctx context.Context, c *LLMClient, chunks []Chunk, onProgress 
 	done := 0
 	for i := range chunks {
 		if chunks[i].Type != ChunkTypeProse {
+			continue
+		}
+		if chunks[i].Enrichment != nil {
+			done++
 			continue
 		}
 		if err := EnrichChunk(ctx, c, &chunks[i]); err != nil {

@@ -74,12 +74,17 @@ func (c *EmbedClient) Embed(ctx context.Context, text string) ([]float32, error)
 // gain from goroutine fan-out, and serial requests keep server
 // memory bounded.
 //
-// Progress callback fires after every chunk so the CLI can print a
-// status line; pass nil to skip. Errors abort the whole batch — a
-// failure usually means the embedding server died, in which case
-// retrying chunks is wasted work.
+// Already-embedded chunks (len(Embedding) > 0) are skipped — the
+// resume path. Errors abort the batch; a failure usually means the
+// embedding server died and retrying is wasted work.
 func EmbedChunks(ctx context.Context, c *EmbedClient, chunks []Chunk, onProgress func(done, total int)) error {
 	for i := range chunks {
+		if len(chunks[i].Embedding) > 0 {
+			if onProgress != nil {
+				onProgress(i+1, len(chunks))
+			}
+			continue
+		}
 		vec, err := c.Embed(ctx, chunks[i].Text)
 		if err != nil {
 			return fmt.Errorf("embed chunk %s: %w", chunks[i].ID, err)
