@@ -293,14 +293,16 @@ func Build(cfg Config) (*vamp.Pipeline, error) {
 		Output("all_chunks.json").
 		OutputFormatJSON()
 
-	// TTS via Kokoro. The audio stage's default retry policy (added in
-	// vamp v0.5+) covers transient warm-up failures.
+	// TTS via Kokoro. Voice is resolved from Config at build time
+	// because the Audio stage's Voice field is passed verbatim to
+	// kokoro, NOT template-rendered. Text IS template-rendered (so
+	// {{.chunk.text}} works there).
 	audio := p.Audio("audio").
 		Capability("tts").
 		After(flattenChunks).
 		Foreach(flattenChunks, "chunk").
 		Engine(vamp.AudioEngineKokoro).
-		Voice("{{.inputs.voice}}").
+		Voice(cfg.Voice).
 		TextTemplate("{{.chunk.text}}").
 		Output("audio/{{.chunk.unit_id}}/chunk_{{.i}}.wav")
 
