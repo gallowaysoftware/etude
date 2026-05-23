@@ -23,8 +23,10 @@ go install github.com/gallowaysoftware/textbook-to-audiobook/cmd/textbook-to-aud
 textbook-to-audiobook requirements
 
 # 4. start the external services it expects
-docker compose -f ~/.config/vibe/compose/searxng/docker-compose.yaml up -d
-vibe profile activate tts_kokoro
+vibe start searxng       # web-search sidecar
+vibe start tts_kokoro    # TTS sidecar
+vibe start comfyui       # image-gen sidecar (cover art)
+vibe start long_form     # the active LLM profile
 
 # 5. run
 textbook-to-audiobook run \
@@ -34,6 +36,29 @@ textbook-to-audiobook run \
 ```
 
 Run time: ~5 hours on a single RTX 5090 for a 60-lesson module. Deliverables land in `$XDG_STATE_HOME/vamp/runs/textbook-to-audiobook_<timestamp>/`.
+
+## RAG export
+
+After a textbook run lands, the `rag` family of subcommands produces a portable retrieval-augmented dataset — chunked + embedded content + study aids — loadable in AnythingLLM, LangChain, LlamaIndex, or Open WebUI.
+
+```bash
+# Bring up the embedding sidecar (one-time per session).
+vibe start embed_bge_large    # bge-large-en-v1.5 on :14004
+
+# Chunk + enrich + embed.
+textbook-to-audiobook rag run \
+  --lessons <run-dir>/processed_lessons.json \
+  --out <run-dir>/rag \
+  --module module_1
+
+# Build a ChromaDB persistent directory.
+textbook-to-audiobook rag pack \
+  --chunks <run-dir>/rag/chunks.jsonl \
+  --out <run-dir>/rag \
+  --collection module_1
+```
+
+Outputs include `chunks.jsonl` (source of truth, embeddings + LLM enrichment), `chroma_db/` (loadable), `flashcards.tsv` (Anki), `study_qa.md`, `glossary.md`, `key_numbers.md`, `equations.md`, and `manifest.json`.
 
 ## What's the difference from a generic vamp YAML pipeline
 
