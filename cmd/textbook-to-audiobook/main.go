@@ -72,6 +72,12 @@ running daemon and the right capabilities mapped. Run the
 	root.PersistentFlags().StringVar(&cfg.CoverPrompt, "cover-prompt", "",
 		"SDXL prompt for the module cover. Templated.")
 
+	// `rag` is a strict downstream of the textbook pipeline — it
+	// consumes processed_lessons.json and produces the RAG export.
+	// Lives alongside vamp's auto-registered `run` so the user has
+	// a single binary for both flows.
+	root.AddCommand(ragCmd())
+
 	if err := root.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, "textbook-to-audiobook:", err)
 		os.Exit(1)
