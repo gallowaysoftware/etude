@@ -56,8 +56,8 @@ func TestChunkLessons_StableIDs(t *testing.T) {
 		Lesson:         "Lesson 1",
 		LectureContent: "Some prose paragraph for chunking.",
 		Definitions: map[string]string{
-			"α-amylase": "An enzyme that cleaves alpha-1,4 bonds.",
-			"β-amylase": "An enzyme that cleaves maltose units.",
+			"α-amylase":        "An enzyme that cleaves alpha-1,4 bonds.",
+			"β-amylase":        "An enzyme that cleaves maltose units.",
 			"limit dextrinase": "An enzyme that cleaves alpha-1,6 bonds.",
 		},
 		KeyNumbers: map[string]string{
@@ -88,10 +88,10 @@ func TestChunkLessons_NoDuplicateIDsWithCollidingSlugs(t *testing.T) {
 	lessons := &ProcessedLessons{Items: []ProcessedLesson{{
 		Lesson: "Lesson 1",
 		Definitions: map[string]string{
-			"α-amylase":         "alpha enzyme",
-			"β-amylase":         "beta enzyme",
-			"limit dextrinase":  "branching enzyme",
-			"amyloglucosidase":  "glucose-producing enzyme",
+			"α-amylase":        "alpha enzyme",
+			"β-amylase":        "beta enzyme",
+			"limit dextrinase": "branching enzyme",
+			"amyloglucosidase": "glucose-producing enzyme",
 		},
 	}}}
 	chunks := ChunkLessons("m", lessons, 1000)

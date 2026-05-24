@@ -1,2 +1,17 @@
-*.test
 /dist/
+*.test
+*.log
+*.pid
+*.sock
+
+# generated outputs land under $XDG_STATE_HOME/vamp/runs/, not in the
+# source tree, but a stray export shouldn't get tracked.
+*.m4b
+*.mp3
+*.wav
+*.epub
+
+# editor / IDE
+.idea/
+.vscode/
+.DS_Store

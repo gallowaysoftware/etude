@@ -58,13 +58,13 @@ type Config struct {
 // Run executes the full RAG export against one module's
 // processed_lessons.json. Produces, under OutDir:
 //
-//   chunks.jsonl       — every chunk + embedding + per-prose-chunk enrichment
-//   flashcards.tsv     — Anki-importable MC + SA flashcards
-//   study_qa.md        — human-readable Q&A grouped by lesson
-//   glossary.md        — alphabetised definitions (from structured data, no LLM)
-//   key_numbers.md     — constants by lesson (from structured data, no LLM)
-//   equations.md       — deduped equation cheat sheet (LLM-extracted)
-//   manifest.json      — embedding model id + chunk params + source hashes
+//	chunks.jsonl       — every chunk + embedding + per-prose-chunk enrichment
+//	flashcards.tsv     — Anki-importable MC + SA flashcards
+//	study_qa.md        — human-readable Q&A grouped by lesson
+//	glossary.md        — alphabetised definitions (from structured data, no LLM)
+//	key_numbers.md     — constants by lesson (from structured data, no LLM)
+//	equations.md       — deduped equation cheat sheet (LLM-extracted)
+//	manifest.json      — embedding model id + chunk params + source hashes
 //
 // Sequential by design — see EmbedChunks / EnrichChunks for the
 // rationale. Errors are returned as the first failure surfaces;

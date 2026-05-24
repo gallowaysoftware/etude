@@ -14,13 +14,13 @@ package rag
 // fields the RAG flow uses are typed; the LLM may produce additional
 // keys (e.g. related_images) that we ignore.
 type ProcessedLesson struct {
-	Lesson          string            `json:"lesson"`
-	LectureContent  string            `json:"lecture_content"`
-	Definitions     map[string]string `json:"definitions"`
-	KeyNumbers      map[string]string `json:"key_numbers"`
-	Processes       []string          `json:"processes"`
-	CommonMistakes  []string          `json:"common_mistakes"`
-	ExamFocus       []string          `json:"exam_focus"`
+	Lesson         string            `json:"lesson"`
+	LectureContent string            `json:"lecture_content"`
+	Definitions    map[string]string `json:"definitions"`
+	KeyNumbers     map[string]string `json:"key_numbers"`
+	Processes      []string          `json:"processes"`
+	CommonMistakes []string          `json:"common_mistakes"`
+	ExamFocus      []string          `json:"exam_focus"`
 }
 
 // ProcessedLessons is the top-level shape of processed_lessons.json.
@@ -82,10 +82,10 @@ type Chunk struct {
 
 // Enrichment is the LLM-generated study material for one prose chunk.
 type Enrichment struct {
-	Summary          string             `json:"summary"`
-	KeyTerms         []string           `json:"key_terms"`
-	MultipleChoice   []MultipleChoice   `json:"multiple_choice"`
-	ShortAnswer      []ShortAnswer      `json:"short_answer"`
+	Summary        string           `json:"summary"`
+	KeyTerms       []string         `json:"key_terms"`
+	MultipleChoice []MultipleChoice `json:"multiple_choice"`
+	ShortAnswer    []ShortAnswer    `json:"short_answer"`
 }
 
 // MultipleChoice is one MC question. CorrectIndex points at the right
@@ -108,16 +108,16 @@ type ShortAnswer struct {
 // future tool know whether the embedding model + chunk parameters in
 // the export are compatible with whatever pipeline is reading it.
 type Manifest struct {
-	GeneratedAt     string `json:"generated_at"`     // RFC3339
-	Module          string `json:"module"`
-	EmbeddingModel  string `json:"embedding_model"`  // e.g. "bge-large-en-v1.5-q8"
-	EmbeddingDims   int    `json:"embedding_dims"`   // 1024 for bge-large
-	ChunkMaxChars   int    `json:"chunk_max_chars"`
-	NumLessons      int    `json:"num_lessons"`
-	NumChunks       int    `json:"num_chunks"`
-	NumDefinitions  int    `json:"num_definitions"`
-	NumKeyNumbers   int    `json:"num_key_numbers"`
-	NumProcesses    int    `json:"num_processes"`
-	NumEquations    int    `json:"num_equations"`
-	SourceFile      string `json:"source_file"`      // path to processed_lessons.json
+	GeneratedAt    string `json:"generated_at"` // RFC3339
+	Module         string `json:"module"`
+	EmbeddingModel string `json:"embedding_model"` // e.g. "bge-large-en-v1.5-q8"
+	EmbeddingDims  int    `json:"embedding_dims"`  // 1024 for bge-large
+	ChunkMaxChars  int    `json:"chunk_max_chars"`
+	NumLessons     int    `json:"num_lessons"`
+	NumChunks      int    `json:"num_chunks"`
+	NumDefinitions int    `json:"num_definitions"`
+	NumKeyNumbers  int    `json:"num_key_numbers"`
+	NumProcesses   int    `json:"num_processes"`
+	NumEquations   int    `json:"num_equations"`
+	SourceFile     string `json:"source_file"` // path to processed_lessons.json
 }
