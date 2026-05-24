@@ -199,7 +199,13 @@ func Build(cfg Config) (*vamp.Pipeline, error) {
 		OutputFormatJSON().
 		Output("topics.json").
 		Param("temperature", 0.2).
-		Param("max_tokens", 8192)
+		Param("max_tokens", 8192).
+		Retry(&vamp.RetryPolicy{
+			MaxAttempts:    3,
+			InitialBackoff: 5 * time.Second,
+			MaxBackoff:     30 * time.Second,
+			RetryOn:        []string{"transient", "invalid_output"},
+		})
 
 	// Web search per topic. URL-encoded so '&'/'+'/'%' in topics don't
 	// corrupt the request. Cached (idempotent reads).
