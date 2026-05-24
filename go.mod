@@ -3,7 +3,7 @@ module github.com/gallowaysoftware/textbook-to-audiobook
 go 1.26.3
 
 require (
-	github.com/gallowaysoftware/vibe v0.6.0
+	github.com/gallowaysoftware/vibe v0.6.1
 	github.com/spf13/cobra v1.10.2
 )
 
