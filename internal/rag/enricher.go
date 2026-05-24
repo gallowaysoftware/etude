@@ -24,11 +24,17 @@ type LLMClient struct {
 // NewLLMClient returns a client. baseURL is the proxy root (no /v1
 // suffix); model is the alias the server registered (e.g.
 // "qwen3.6-27b-mtp-q6_k").
+//
+// Timeout is 30 minutes because the equation-extraction pass feeds
+// the full module corpus (~100k tokens for Module 1) and a single
+// inference can run 10-20 minutes on a 27B model. Smaller calls
+// finish in seconds — the long timeout is only consumed when an
+// equation pass actually needs it.
 func NewLLMClient(baseURL, model string) *LLMClient {
 	return &LLMClient{
 		BaseURL: strings.TrimRight(baseURL, "/"),
 		Model:   model,
-		HTTP:    &http.Client{Timeout: 5 * time.Minute},
+		HTTP:    &http.Client{Timeout: 30 * time.Minute},
 	}
 }
 

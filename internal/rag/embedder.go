@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -32,7 +33,50 @@ func NewEmbedClient(baseURL, model string) *EmbedClient {
 // Embed encodes one piece of text. Returns the 1024-dim vector (for
 // bge-large) or whatever the server's model produces — callers should
 // verify dims match their manifest.
+//
+// On HTTP 400 "exceed_context_size_error" (the server enforces a hard
+// 512-token cap on bge-large), the call shrinks the input by ~25% and
+// retries, up to 3 times. The chunker keeps inputs well under the
+// limit on average, but dense English (chemistry / biology terms with
+// hyphens, equation-rich text) occasionally packs more tokens-per-
+// char than the chunker's char budget expected. Truncating retains
+// most of the semantic content rather than losing the whole chunk.
 func (c *EmbedClient) Embed(ctx context.Context, text string) ([]float32, error) {
+	// Pre-cap: enrichment frequently balloons a 1600-char chunk into
+	// 5-10k chars of structured commentary; trying full-size first
+	// then retrying down is wasteful when we know the embed server's
+	// 512-token cap means anything over ~1800 chars (best case, ~3.5
+	// chars/token) will fail. Cap up-front, retry-on-overflow as a
+	// backstop for dense text that still exceeds the cap at 1800.
+	const initialCap = 1800
+	const maxRetries = 6
+	cur := text
+	if len(cur) > initialCap {
+		cur = cur[:initialCap]
+	}
+	for attempt := 0; attempt <= maxRetries; attempt++ {
+		vec, err := c.embedOnce(ctx, cur)
+		if err == nil {
+			return vec, nil
+		}
+		// Only retry on the specific over-context error; everything
+		// else (server died, malformed response, etc.) is a real fail.
+		if !isExceedContextErr(err) || attempt == maxRetries {
+			return nil, err
+		}
+		// Aggressive shrink — half each attempt. From 1800 chars: 900,
+		// 450, 225, 112, ... 6 retries hits ~28 chars, which is well
+		// past "useful signal." The < 256 floor below trips first.
+		newLen := len(cur) / 2
+		if newLen < 256 {
+			return nil, fmt.Errorf("embed: text too dense to fit (gave up after shrinking to %d chars): %w", len(cur), err)
+		}
+		cur = cur[:newLen]
+	}
+	return nil, fmt.Errorf("embed: exhausted retries")
+}
+
+func (c *EmbedClient) embedOnce(ctx context.Context, text string) ([]float32, error) {
 	body, err := json.Marshal(map[string]any{
 		"input": text,
 		"model": c.Model,
@@ -66,6 +110,28 @@ func (c *EmbedClient) Embed(ctx context.Context, text string) ([]float32, error)
 		return nil, fmt.Errorf("empty embedding response")
 	}
 	return parsed.Data[0].Embedding, nil
+}
+
+// isExceedContextErr matches llama-server's two over-limit failure
+// modes. The server distinguishes them inconsistently — same root
+// cause, different status codes + payloads:
+//
+//   - HTTP 400 with `"type":"exceed_context_size_error"` when the
+//     input parses to MORE than the model's max_seq_len (e.g. 514
+//     tokens on a model trained at 512).
+//   - HTTP 500 with `"too large to process"` + a "physical batch
+//     size" hint when the input fits the seq-len but exceeds the
+//     server's --ubatch-size setting (per-request memory budget).
+//
+// Both respond to the same fix client-side: truncate the input and
+// retry. The retry loop in Embed treats them as one class.
+func isExceedContextErr(err error) bool {
+	if err == nil {
+		return false
+	}
+	s := err.Error()
+	return strings.Contains(s, "exceed_context_size_error") ||
+		strings.Contains(s, "too large to process")
 }
 
 // EmbedChunks fills the Embedding field of every chunk in-place.
