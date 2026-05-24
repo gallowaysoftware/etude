@@ -16,9 +16,3 @@ require (
 	google.golang.org/protobuf v1.36.11 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
-
-// Local development: pin to the in-tree vibe checkout so the new
-// Pipeline.Requirements() / vamp.BuildRoot API surface (added after
-// v0.5.0 was tagged) is available. Drop this replace once the
-// dependency tag containing those APIs is published.
-replace github.com/gallowaysoftware/vibe => ../vibe
