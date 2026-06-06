@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"path/filepath"
 
 	"github.com/spf13/cobra"
 
@@ -231,12 +230,4 @@ Pass it via --owui-token or the OPEN_WEBUI_TOKEN env var.
 	_ = cmd.MarkFlagRequired("lessons")
 	_ = cmd.MarkFlagRequired("collection")
 	return cmd
-}
-
-// suggestModuleDirHint returns a hint string with the user's likely
-// processed_lessons.json path. Pure UX helper for `rag run` so the
-// caller doesn't have to dig for it. Currently unused but kept for
-// the moment a help message gets longer.
-func suggestModuleDirHint(runDir string) string {
-	return filepath.Join(runDir, "processed_lessons.json")
 }

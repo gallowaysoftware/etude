@@ -85,7 +85,7 @@ func Run(ctx context.Context, cfg Config) error {
 		return fmt.Errorf("OutDir is required")
 	}
 	if cfg.Module == "" {
-		return fmt.Errorf("Module is required")
+		return fmt.Errorf("module is required")
 	}
 	if cfg.EmbedURL == "" {
 		cfg.EmbedURL = "http://127.0.0.1:14004"
