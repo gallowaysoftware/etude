@@ -71,7 +71,7 @@ convention as rag pack); set TEXTBOOK_RAG_PYTHON to override.
 	}
 	cmd.Flags().StringVar(&flashcardsFile, "flashcards", "", "Path to flashcards.tsv (required).")
 	cmd.Flags().StringVar(&outFile, "out", "", "Output .apkg path (defaults to anki_deck.apkg next to flashcards.tsv).")
-	cmd.Flags().StringVar(&deckName, "deck-name", "CIBD Study", "Deck title shown in Anki.")
+	cmd.Flags().StringVar(&deckName, "deck-name", "Study Deck", "Deck title shown in Anki.")
 	_ = cmd.MarkFlagRequired("flashcards")
 	return cmd
 }
@@ -120,6 +120,7 @@ prior textbook run, --out at a directory under the same run.
 				LessonsFile:    lessonsFile,
 				OutDir:         outDir,
 				Module:         module,
+				Program:        cfg.ProgramLabel,
 				EmbedURL:       embedURL,
 				EmbedModel:     embedModel,
 				LLMURL:         llmURL,

@@ -36,6 +36,14 @@ type Config struct {
 	LLMURL   string
 	LLMModel string // default "qwen3.6-27b-mtp-q6_k"
 
+	// Program is the course/program descriptor woven into the study-aid
+	// system prompts (enrichment + equations), e.g. "a constitutional
+	// law course" or "an introductory astronomy course". Empty
+	// defaults to a generic "exam preparation" — the open pipeline
+	// ships no curriculum-specific identity, so pass the
+	// material-specific label at run time (the --program flag).
+	Program string
+
 	// ChunkMaxChars is the prose-chunk character budget. Default
 	// DefaultChunkMaxChars (2400).
 	ChunkMaxChars int
@@ -159,7 +167,7 @@ func Run(ctx context.Context, cfg Config) error {
 	}
 
 	// ---- enrich ----
-	llm := NewLLMClient(cfg.LLMURL, cfg.LLMModel)
+	llm := NewLLMClient(cfg.LLMURL, cfg.LLMModel, cfg.Program)
 	if cfg.SkipEnrichment {
 		logf("enrichment SKIPPED (--skip-enrichment)")
 	} else {

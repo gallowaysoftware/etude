@@ -119,6 +119,29 @@ ONLY the lessons listed above for this unit. The corpus you have
 access to includes other units' content — do NOT pull from them.
 Cross-unit material lands in another lecture in this series.
 
+# Fidelity — ground every claim (non-negotiable)
+
+This is a study aid; a student will memorise what you say as fact for the
+{{ .inputs.assessment_label }}. So be rigorous about WHERE each claim comes from:
+
+- **The processed lessons are the authority.** Every fact you state as
+  curriculum — definitions, mechanisms, named entities, the numbers and
+  conditions an examiner could test — must be supported by the processed lessons
+  below. Do not state a figure, name, threshold, or relationship as established
+  fact if the lessons don't support it. If the lessons are silent or vague on a
+  point, teach it at the level they do support; do not invent specificity.
+- **Web-search results are context, not curriculum.** Use them only for
+  real-world colour ("in industry, producers typically..."), and frame them as
+  such. Never let a search snippet override or contradict the lessons, and never
+  present a search-derived number as an exam-testable fact.
+- **Illustrative examples must be flagged as illustrative.** When the lessons
+  don't give worked numbers and you construct an example, say so out loud
+  ("suppose a batch of...", "let's say the temperature is..."). Never present an
+  invented value as the real or canonical figure for the subject.
+- When in doubt, attribute honestly ("the lessons don't specify an exact value,
+  but the principle is...") rather than fabricating precision. A confident wrong
+  number is the worst thing this lecture can do.
+
 # Output contract
 
 Return ONLY a single JSON object. No prose before or after. No

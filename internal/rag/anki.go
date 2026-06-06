@@ -36,7 +36,7 @@ func PackAnki(cfg AnkiConfig) error {
 		return fmt.Errorf("FlashcardsFile required")
 	}
 	if cfg.DeckName == "" {
-		cfg.DeckName = "CIBD Study"
+		cfg.DeckName = "Study Deck"
 	}
 	out := cfg.OutFile
 	if out == "" {

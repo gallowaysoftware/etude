@@ -8,8 +8,8 @@ import (
 )
 
 // Build constructs the textbook-to-audiobook pipeline from a Config.
-// The DAG mirrors the CIBD pipeline's module.yaml the binary was lifted
-// from, with Config-tunable knobs (subject voice, cover art prompt,
+// The DAG was lifted from a production module.yaml pipeline, with
+// Config-tunable knobs (subject voice, cover art prompt,
 // EPUB metadata, output filename templates) pushed into pipeline inputs
 // so the prompts reference them via `{{ .inputs.<name> }}` instead of
 // having the curriculum-specific surface baked in.
@@ -26,7 +26,7 @@ func Build(cfg Config) (*vamp.Pipeline, error) {
 	// supplied, no module to build yet).
 
 	p := vamp.New("textbook-to-audiobook").
-		Describe("Turn a directory of structured lessons (markdown + diagrams) into a chapterised audiobook (M4B), per-unit MP3s, a markdown study guide, and an EPUB companion. Generic re-packaging of the cibd-distilling pipeline.")
+		Describe("Turn a directory of structured lessons (markdown + diagrams) into a chapterised audiobook (M4B), per-unit MP3s, a markdown study guide, and an EPUB companion. Curriculum-agnostic; the subject-specific surface is supplied via Config.")
 
 	// ---- Inputs ---------------------------------------------------------
 	// Required at run time.
@@ -266,6 +266,29 @@ func Build(cfg Config) (*vamp.Pipeline, error) {
 		Output(cfg.StudyGuideFilenameTemplate).
 		Param("temperature", 0.4).
 		Param("max_tokens", 32768)
+
+	// Fidelity audit (report-only): ground the study guide against the SOURCE
+	// curriculum and flag any claim the source doesn't support — fabricated
+	// figures, invented entities, distorted relationships. The nonfiction analogue
+	// of a serialized-fiction pipeline's continuity check: for a study aid, a
+	// confident unsupported number is the worst possible error. A LEAF stage
+	// (nothing depends on its output), so it never alters the audio/EPUB path; the
+	// report lands beside the outputs for audit. The same grounding rule now also
+	// constrains generate_unit_script.md at write time. Low temperature — a
+	// checking task, conservative about false positives. (Graduates to feed a fix,
+	// the way that continuity check did, once a GPU run has validated it.)
+	p.Text("fidelity_check").
+		Capability("long_form").
+		After(studyGuide, compactLessons).
+		PromptFS(promptsFS, "fidelity_check.md").
+		Output("fidelity_report.md").
+		Param("temperature", 0.1).
+		Param("max_tokens", 8192).
+		Retry(&vamp.RetryPolicy{
+			MaxAttempts:    2,
+			InitialBackoff: 5 * time.Second,
+			RetryOn:        []string{"transient"},
+		})
 
 	// Flatten per-unit scripts into a flat segment list, stamping each
 	// segment with its owning parent unit_id.

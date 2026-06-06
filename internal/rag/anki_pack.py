@@ -25,7 +25,7 @@ def main() -> int:
     p = argparse.ArgumentParser()
     p.add_argument("--flashcards", required=True)
     p.add_argument("--out", required=True)
-    p.add_argument("--deck-name", default="CIBD Study")
+    p.add_argument("--deck-name", default="Study Deck")
     args = p.parse_args()
 
     try:
@@ -43,11 +43,11 @@ def main() -> int:
         return int(h[:8], 16) & 0x7FFFFFFF
 
     deck_id = stable_id("deck:" + args.deck_name)
-    model_id = stable_id("model:cibd-study-basic")
+    model_id = stable_id("model:study-basic")
 
     model = genanki.Model(
         model_id,
-        "CIBD Study Basic",
+        "Study Basic",
         fields=[{"name": "Front"}, {"name": "Back"}, {"name": "Lesson"}],
         templates=[
             {

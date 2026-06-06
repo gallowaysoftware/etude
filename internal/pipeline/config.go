@@ -19,9 +19,9 @@ import (
 //
 // Defaults are tuned for a generic course: short, neutral terminology;
 // a neutral cover prompt; the af_bella Kokoro voice (A-grade en-US
-// female narration that lectures cleanly). A fork that wants the
-// CIBD-distilling flavour overrides the descriptive fields and the
-// cover prompt; see examples/cibd for a worked example.
+// female narration that lectures cleanly). A fork for a specific
+// curriculum overrides the descriptive fields and the cover prompt;
+// see examples/example-course for a worked example.
 type Config struct {
 	// ---- Required at run time (no defaults) ----------------------------
 
@@ -47,8 +47,7 @@ type Config struct {
 	OutputDir string
 
 	// SearchSuffix is appended to every web-search query (e.g.
-	// "distilling spirits practical example"). Empty disables the
-	// suffix.
+	// "astronomy worked example"). Empty disables the suffix.
 	SearchSuffix string
 
 	// Voice names the Kokoro voice the audio stage uses (e.g.
@@ -56,15 +55,15 @@ type Config struct {
 	Voice string
 
 	// SubjectLabel is the field-of-study label woven into every prompt
-	// (e.g. "distilling", "introductory physics", "constitutional
-	// law"). Drives how the model frames its writing voice.
+	// (e.g. "introductory astronomy", "introductory physics",
+	// "constitutional law"). Drives how the model frames its writing voice.
 	SubjectLabel string
 	// ProgramLabel names the program / certification / course this
-	// material belongs to (e.g. "CIBD certification course",
+	// material belongs to (e.g. "an introductory astronomy course",
 	// "Stanford CS103"). Used to anchor the lecturer's persona.
 	ProgramLabel string
 	// ExpertPersona is the first-person identity the lecturer prompts
-	// adopt (e.g. "an expert distiller", "a constitutional law
+	// adopt (e.g. "an astronomy lecturer", "a constitutional law
 	// scholar"). The full prompt prefixes "You are " in front of this.
 	ExpertPersona string
 	// AssessmentLabel names how learners will be evaluated on the
@@ -134,7 +133,7 @@ func (c Config) WithDefaults() Config {
 	}
 	if c.FilenamePrefix == "" {
 		// Topic slug if the caller supplied one; otherwise fall
-		// back to module_N for CIBD-style numbered series.
+		// back to module_N for numbered series.
 		if c.ModuleTopic != "" {
 			c.FilenamePrefix = filenameSlug(c.ModuleTopic)
 		} else {

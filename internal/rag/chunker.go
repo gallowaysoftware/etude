@@ -9,7 +9,7 @@ import (
 // DefaultChunkMaxChars is the prose-chunk char budget. bge-large
 // tokenises technical content (enzymes, chemical names, units) more
 // densely than the 4-chars/token average — observed 3.3 chars/token
-// in CIBD content. 1600 chars × (1 token / 3.3 chars) ≈ 485 tokens,
+// in dense technical content. 1600 chars × (1 token / 3.3 chars) ≈ 485 tokens,
 // safely under the model's 512-token sequence limit.
 const DefaultChunkMaxChars = 1600
 

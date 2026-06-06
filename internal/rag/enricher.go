@@ -19,6 +19,10 @@ type LLMClient struct {
 	BaseURL string
 	Model   string
 	HTTP    *http.Client
+	// Subject is the course/program descriptor woven into the study-aid
+	// system prompts so the open pipeline ships no curriculum-specific
+	// identity. Defaults to a generic "exam preparation".
+	Subject string
 }
 
 // NewLLMClient returns a client. baseURL is the proxy root (no /v1
@@ -30,10 +34,14 @@ type LLMClient struct {
 // inference can run 10-20 minutes on a 27B model. Smaller calls
 // finish in seconds — the long timeout is only consumed when an
 // equation pass actually needs it.
-func NewLLMClient(baseURL, model string) *LLMClient {
+func NewLLMClient(baseURL, model, subject string) *LLMClient {
+	if subject == "" {
+		subject = "exam preparation"
+	}
 	return &LLMClient{
 		BaseURL: strings.TrimRight(baseURL, "/"),
 		Model:   model,
+		Subject: subject,
 		HTTP:    &http.Client{Timeout: 30 * time.Minute},
 	}
 }
@@ -93,13 +101,13 @@ type ChatOpts struct {
 	MaxTokens   int
 }
 
-// EnrichSystemPrompt is the system message for the per-chunk
+// enrichSystemPrompt is the system message for the per-chunk
 // enrichment pass. Asks for strict JSON output so the response
-// round-trips through json.Unmarshal without parsing tricks.
-const EnrichSystemPrompt = `You are a study-aid generator for a Canadian distillery diploma
-(CIBD) exam preparation tool.
-
-Given one chunk of a lesson's content, produce structured study
+// round-trips through json.Unmarshal without parsing tricks. The
+// subject descriptor is injected at run time so the open pipeline
+// ships no curriculum-specific identity.
+func enrichSystemPrompt(subject string) string {
+	return "You are a study-aid generator for " + subject + ".\n\n" + `Given one chunk of a lesson's content, produce structured study
 material in strict JSON matching the schema below. No prose
 preamble, no markdown fences — first byte is '{'.
 
@@ -137,6 +145,7 @@ Quality rules:
 Avoid generic test-prep filler ("which of the following is true?"
 without specifics) and avoid restating the chunk verbatim in the
 answer.`
+}
 
 // EnrichChunk runs the enrichment LLM against one prose chunk and
 // unmarshals the strict-JSON response. Non-prose chunks (definitions,
@@ -150,7 +159,7 @@ func EnrichChunk(ctx context.Context, c *LLMClient, chunk *Chunk) error {
 		"Lesson: %s\n\nChunk:\n%s",
 		chunk.LessonTitle, chunk.Text,
 	)
-	raw, err := c.Chat(ctx, EnrichSystemPrompt, userMsg, ChatOpts{
+	raw, err := c.Chat(ctx, enrichSystemPrompt(c.Subject), userMsg, ChatOpts{
 		Temperature: 0.3,
 		MaxTokens:   8192,
 	})

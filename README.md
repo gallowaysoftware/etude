@@ -60,6 +60,8 @@ textbook-to-audiobook rag pack \
 
 Outputs include `chunks.jsonl` (source of truth, embeddings + LLM enrichment), `chroma_db/` (loadable), `flashcards.tsv` (Anki), `study_qa.md`, `glossary.md`, `key_numbers.md`, `equations.md`, and `manifest.json`.
 
+`rag pack` and `rag anki` shell out to Python helpers — `rag pack` needs the `chromadb` package, `rag anki` needs `genanki`. Both prefer a venv at `~/.local/state/textbook-to-audiobook/rag-venv` if present (set `TEXTBOOK_RAG_PYTHON` to point elsewhere); otherwise `python3` on `$PATH` must have the package installed. The study-aid prompts frame themselves around `--program`, so pass it (e.g. `--program "an introductory astronomy course"`) for material-appropriate questions; it defaults to generic exam-prep language.
+
 ## What's the difference from a generic vamp YAML pipeline
 
 A YAML pipeline is portable but stops at YAML's expressive ceiling — no real CLI, no embedded assets, no auto-generated runtime contract. This binary:
@@ -80,26 +82,28 @@ All curriculum-specific surface area is in `internal/pipeline/config.go` as a `C
 | `--source` | `LessonRoot` | Lesson directory root |
 | `--module-num` | `ModuleNum` | Numeric module id (cover seed + filenames) |
 | `--topic` | `ModuleTopic` | Short prose summary |
-| `--subject` | `SubjectLabel` | "the course subject" → "distilling", "physics", … |
-| `--program` | `ProgramLabel` | "this course" → "CIBD certification", "Stanford CS103", … |
+| `--subject` | `SubjectLabel` | "the course subject" → "astronomy", "physics", … |
+| `--program` | `ProgramLabel` | "this course" → "an introductory astronomy course", "Stanford CS103", … |
 | `--persona` | `ExpertPersona` | First-person voice the LLM adopts |
-| `--assessment` | `AssessmentLabel` | "final assessment" → "CIBD exam", "qualifying review", … |
+| `--assessment` | `AssessmentLabel` | "final assessment" → "course final", "qualifying review", … |
 | `--cover-prompt` | `CoverPrompt` | SDXL prompt for the module cover |
 | `--voice` | `Voice` | Kokoro voice (default `af_bella`) |
 | `--search-suffix` | `SearchSuffix` | Appended to every web-search query |
 
-For more elaborate forks (different output filename templates, EPUB metadata, etc.) see `examples/cibd/config.go` — it shows how the original CIBD-distilling pipeline reproduces by setting just the diverging fields.
+The `rag` study-aid prompts (enrichment + equation extraction) frame themselves around `--program` too, so a passed-in program label is the only place curriculum identity lives — the pipeline itself ships subject-agnostic.
+
+For more elaborate forks (different output filename templates, EPUB metadata, etc.) see [`examples/example-course/config.go`](examples/example-course/config.go) — it shows how to skin the pipeline for a specific curriculum by setting just the diverging fields.
 
 ## Lesson directory layout
 
 ```
 Module_1/
-├── Lesson_1_-_Introduction_to_Cereals/
+├── Lesson_1_-_Introduction_to_Stars/
 │   ├── lesson.md
 │   └── images/
 │       ├── diagram_01.svg
 │       └── photo_01.png
-├── Lesson_2_-_Barley_Modification/
+├── Lesson_2_-_Stellar_Spectra/
 │   └── lesson.md
 └── …
 ```
@@ -117,7 +121,7 @@ Run `textbook-to-audiobook requirements` to see the live list. As of this writin
 
 ## Pipeline structure
 
-The DAG mirrors the original cibd-distilling `module.yaml`:
+The DAG was lifted from a production `module.yaml` pipeline:
 
 ```
 list_lessons → flatten_unique_images → describe_image (vision, foreach unique image)
@@ -144,8 +148,8 @@ Run `textbook-to-audiobook viz` for the full Mermaid graph.
 
 ## Status
 
-Validated to produce equivalent output to the original CIBD pipeline. Tested by reproducing M3 and M1 deliverables (M2 in flight at the time of writing).
+Validated against the production pipeline it was lifted from, by reproducing several module deliverables end-to-end.
 
 ## License
 
-MIT. The pipeline is Galloway Software's; the CIBD curriculum is not — see `examples/cibd/` for how the curriculum-specific surface plugs in.
+MIT — the pipeline is Galloway Software's. It ships no curriculum content: the subject-specific surface (labels, cover prompt, source lessons) is supplied at run time via flags or a `Config` fork — see [`examples/example-course/`](examples/example-course/). Bring your own lesson material; whatever you generate from it is yours.
