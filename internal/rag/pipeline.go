@@ -191,10 +191,22 @@ func Run(ctx context.Context, cfg Config) error {
 	}
 
 	// ---- equations ----
+	// ExtractEquations is a 10-20 min LLM pass whose only output is
+	// equations.md. On --resume, carry over an existing equations.md
+	// rather than re-running it; --skip-equations still wins.
 	var equationsMD string
-	if cfg.SkipEquations {
+	equationsPath := filepath.Join(cfg.OutDir, "equations.md")
+	switch {
+	case cfg.SkipEquations:
 		logf("equations SKIPPED (--skip-equations)")
-	} else {
+	case cfg.Resume && fileExists(equationsPath):
+		prior, rerr := os.ReadFile(equationsPath)
+		if rerr != nil {
+			return fmt.Errorf("resume equations: %w", rerr)
+		}
+		equationsMD = string(prior)
+		logf("resume: carried equations from %s (skipping LLM extraction)", equationsPath)
+	default:
 		logf("extracting equations via LLM")
 		equationsMD, err = ExtractEquations(ctx, llm, &lessons)
 		if err != nil {
@@ -234,6 +246,22 @@ func Run(ctx context.Context, cfg Config) error {
 	// snapshot for any future --resume rerun.
 	checkpoint()
 
+	// ---- validate embeddings ----
+	// Guard against a silently-misconfigured embedding server (wrong
+	// model, truncated/empty vectors) before any artefact is written:
+	// a corrupt chunks.jsonl/manifest is worse than a failed run. On a
+	// resume the prior manifest pins the expected dim, so a swapped
+	// embedding model is caught; a fresh run has no such anchor (and a
+	// stale manifest from a different model must not block it).
+	expectedDim := 0
+	if cfg.Resume {
+		expectedDim = expectedEmbedDim(cfg.OutDir)
+	}
+	embedDims, err := validateEmbeddingDims(chunks, expectedDim)
+	if err != nil {
+		return fmt.Errorf("embedding validation: %w", err)
+	}
+
 	// ---- write artefacts ----
 	type artefact struct {
 		path string
@@ -269,13 +297,6 @@ func Run(ctx context.Context, cfg Config) error {
 	}
 
 	// ---- manifest ----
-	embedDims := 0
-	for _, c := range chunks {
-		if len(c.Embedding) > 0 {
-			embedDims = len(c.Embedding)
-			break
-		}
-	}
 	numEquations := 0
 	if equationsMD != "" {
 		// Crude count: one ### header per equation entry.
@@ -313,4 +334,53 @@ func Run(ctx context.Context, cfg Config) error {
 
 	logf("done — RAG export at %s", cfg.OutDir)
 	return nil
+}
+
+func fileExists(path string) bool {
+	info, err := os.Stat(path)
+	return err == nil && !info.IsDir()
+}
+
+// validateEmbeddingDims verifies every embedded chunk shares the same,
+// non-zero vector dimension and (when expected > 0) that it matches the
+// expected dim. It returns the observed dimension. A mismatch usually
+// means the embedding server is serving a different model than the run
+// was configured for — catching it here keeps a corrupt chunks.jsonl /
+// manifest off disk.
+func validateEmbeddingDims(chunks []Chunk, expected int) (int, error) {
+	dim := 0
+	for _, c := range chunks {
+		n := len(c.Embedding)
+		if n == 0 {
+			continue
+		}
+		switch {
+		case dim == 0:
+			dim = n
+		case n != dim:
+			return 0, fmt.Errorf("inconsistent embedding dims: chunk %s has %d, others have %d", c.ID, n, dim)
+		}
+	}
+	if dim == 0 {
+		return 0, fmt.Errorf("no chunk produced an embedding (zero-dimension vectors); check the embedding server")
+	}
+	if expected > 0 && dim != expected {
+		return 0, fmt.Errorf("embedding dim %d does not match expected %d (from prior manifest); wrong embedding model?", dim, expected)
+	}
+	return dim, nil
+}
+
+// expectedEmbedDim reads the embedding_dims recorded by a prior run's
+// manifest.json in outDir, if any. Returns 0 when absent or unreadable
+// — a resume that lacks a usable manifest just skips the cross-check.
+func expectedEmbedDim(outDir string) int {
+	b, err := os.ReadFile(filepath.Join(outDir, "manifest.json"))
+	if err != nil {
+		return 0
+	}
+	var m Manifest
+	if err := json.Unmarshal(b, &m); err != nil {
+		return 0
+	}
+	return m.EmbeddingDims
 }
