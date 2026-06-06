@@ -37,7 +37,7 @@ def main() -> int:
     # at query time, which would conflict with our pre-computed
     # bge-large vectors.
     try:
-        col = client.get_collection(name=args.collection)
+        col = client.get_collection(name=args.collection, embedding_function=None)
     except Exception:
         col = client.create_collection(name=args.collection, embedding_function=None)
 

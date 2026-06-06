@@ -2,6 +2,7 @@ package rag
 
 import (
 	"bytes"
+	"context"
 	_ "embed"
 	"fmt"
 	"os"
@@ -31,7 +32,7 @@ var ankiHelperPy []byte
 // The helper requires the `genanki` package on the host. Install
 // path (matches chroma): ~/.local/state/textbook-to-audiobook/rag-venv
 // pre-populated with `genanki`.
-func PackAnki(cfg AnkiConfig) error {
+func PackAnki(ctx context.Context, cfg AnkiConfig) error {
 	if cfg.FlashcardsFile == "" {
 		return fmt.Errorf("FlashcardsFile required")
 	}
@@ -67,7 +68,7 @@ func PackAnki(cfg AnkiConfig) error {
 		}
 	}
 
-	cmd := exec.Command(python, tmpf.Name(),
+	cmd := exec.CommandContext(ctx, python, tmpf.Name(),
 		"--flashcards", cfg.FlashcardsFile,
 		"--out", out,
 		"--deck-name", cfg.DeckName,

@@ -32,7 +32,7 @@ type ProcessedLessons struct {
 type ChunkType string
 
 const (
-	// ChunkTypeProse is a ~600-token window of lecture_content.
+	// ChunkTypeProse is a ~485-token (1600-char) window of lecture_content.
 	ChunkTypeProse ChunkType = "prose"
 	// ChunkTypeDefinition is a single term + definition.
 	ChunkTypeDefinition ChunkType = "definition"
@@ -46,8 +46,9 @@ const (
 // hierarchical metadata that lets a retrieval result trace back to a
 // specific lesson and chunk type.
 type Chunk struct {
-	// ID is "<module>_<lesson_idx>_<type>_<idx>" — stable across
-	// regenerations of the same input + chunker settings.
+	// ID is "<module>_l<NNN>_<type>_<idx>" (NNN = zero-padded lesson
+	// index) — stable across regenerations of the same input +
+	// chunker settings.
 	ID string `json:"id"`
 	// Module is the run's module name (e.g. "module_1").
 	Module string `json:"module"`

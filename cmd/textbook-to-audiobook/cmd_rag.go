@@ -61,7 +61,7 @@ Requires Python 3 + the genanki package. The Go side prefers
 convention as rag pack); set TEXTBOOK_RAG_PYTHON to override.
 `,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return rag.PackAnki(rag.AnkiConfig{
+			return rag.PackAnki(cmd.Context(), rag.AnkiConfig{
 				FlashcardsFile: flashcardsFile,
 				OutFile:        outFile,
 				DeckName:       deckName,
@@ -162,10 +162,12 @@ func ragPackCmd() *cobra.Command {
 any other tool that accepts a Chroma persistent client.
 
 Shells out to a bundled Python helper (chromadb.PersistentClient).
-Python 3 + the chromadb package must be on $PATH.
+Python 3 + the chromadb package must be on $PATH. The Go side prefers
+~/.local/state/textbook-to-audiobook/rag-venv if it exists; set
+TEXTBOOK_RAG_PYTHON to override.
 `,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return rag.Pack(rag.PackConfig{
+			return rag.Pack(cmd.Context(), rag.PackConfig{
 				ChunksFile: chunksFile,
 				OutDir:     outDir,
 				Collection: collection,

@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"strings"
 	"time"
+	"unicode/utf8"
 )
 
 // EmbedClient hits an OpenAI-compatible /v1/embeddings endpoint. The
@@ -35,25 +36,23 @@ func NewEmbedClient(baseURL, model string) *EmbedClient {
 // verify dims match their manifest.
 //
 // On HTTP 400 "exceed_context_size_error" (the server enforces a hard
-// 512-token cap on bge-large), the call shrinks the input by ~25% and
-// retries, up to 3 times. The chunker keeps inputs well under the
-// limit on average, but dense English (chemistry / biology terms with
-// hyphens, equation-rich text) occasionally packs more tokens-per-
-// char than the chunker's char budget expected. Truncating retains
+// 512-token cap on bge-large), the call halves the input and retries
+// up to 6 times (256-char floor). The chunker keeps inputs well under
+// the limit on average, but dense English (chemistry / biology terms
+// with hyphens, equation-rich text) occasionally packs more tokens-
+// per-char than the chunker's char budget expected. Truncating retains
 // most of the semantic content rather than losing the whole chunk.
 func (c *EmbedClient) Embed(ctx context.Context, text string) ([]float32, error) {
-	// Pre-cap: enrichment frequently balloons a 1600-char chunk into
-	// 5-10k chars of structured commentary; trying full-size first
-	// then retrying down is wasteful when we know the embed server's
-	// 512-token cap means anything over ~1800 chars (best case, ~3.5
-	// chars/token) will fail. Cap up-front, retry-on-overflow as a
-	// backstop for dense text that still exceeds the cap at 1800.
+	// Pre-cap: dense raw chunk text (multibyte runes, equation-rich
+	// passages) packs more tokens-per-char than the chunker's char
+	// budget assumed, so trying full-size first then retrying down is
+	// wasteful when we know the embed server's 512-token cap means
+	// anything over ~1800 chars (best case, ~3.5 chars/token) will
+	// fail. Cap up-front, retry-on-overflow as a backstop for text
+	// that still exceeds the cap at 1800.
 	const initialCap = 1800
 	const maxRetries = 6
-	cur := text
-	if len(cur) > initialCap {
-		cur = cur[:initialCap]
-	}
+	cur := truncRunes(text, initialCap)
 	for attempt := 0; attempt <= maxRetries; attempt++ {
 		vec, err := c.embedOnce(ctx, cur)
 		if err == nil {
@@ -71,9 +70,23 @@ func (c *EmbedClient) Embed(ctx context.Context, text string) ([]float32, error)
 		if newLen < 256 {
 			return nil, fmt.Errorf("embed: text too dense to fit (gave up after shrinking to %d chars): %w", len(cur), err)
 		}
-		cur = cur[:newLen]
+		cur = truncRunes(cur, newLen)
 	}
 	return nil, fmt.Errorf("embed: exhausted retries")
+}
+
+// truncRunes truncates s to at most n bytes without splitting a
+// multi-byte UTF-8 rune. A raw byte cut can land mid-rune, which
+// json.Marshal then emits as U+FFFD, silently mangling the text the
+// embedding is computed over.
+func truncRunes(s string, n int) string {
+	if len(s) <= n {
+		return s
+	}
+	for n > 0 && !utf8.RuneStart(s[n]) {
+		n--
+	}
+	return s[:n]
 }
 
 func (c *EmbedClient) embedOnce(ctx context.Context, text string) ([]float32, error) {

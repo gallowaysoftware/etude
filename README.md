@@ -43,7 +43,7 @@ After a textbook run lands, the `rag` family of subcommands produces a portable 
 
 ```bash
 # Bring up the embedding sidecar (one-time per session).
-vibe start embed_bge_large    # bge-large-en-v1.5 on :14004
+vibe start embed_bge_large    # bge-large-en-v1.5-q8 on :14004
 
 # Chunk + enrich + embed.
 textbook-to-audiobook rag run \
@@ -69,7 +69,7 @@ A YAML pipeline is portable but stops at YAML's expressive ceiling — no real C
 - **Embeds prompts + workflows** via `go:embed`, so installing the binary is enough to run; no separate prompt directory.
 - **First-class Cobra CLI** — `--source`, `--topic`, `--module-num` instead of `--input lesson_root=… --input module_topic=…`.
 - **Pipeline runtime contract** via the `requirements` subcommand — vibe doctor (or anything else that has to set the host up) reads it as JSON.
-- **Single static binary** cross-compiled by GoReleaser; no Go install on the user's machine.
+- **Single static binary** — `go build`/`go install` produces one self-contained binary (prompts + workflows are `go:embed`-ed); no separate asset directory.
 
 The runtime still needs vibe + the right model backends; the binary is the pipeline, not the inference stack.
 

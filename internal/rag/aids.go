@@ -50,14 +50,14 @@ func WriteFlashcardsTSV(w io.Writer, chunks []Chunk) error {
 			}
 			if _, err := fmt.Fprintf(w, "%s\t%s\t%s\t%s\n",
 				escapeTSV(front.String()), escapeTSV(back.String()),
-				escapeTSV(c.LessonTitle), tags+" question_type::mc"); err != nil {
+				escapeTSV(c.LessonTitle), escapeTSV(tags+" question_type::mc")); err != nil {
 				return err
 			}
 		}
 		for _, sa := range c.Enrichment.ShortAnswer {
 			if _, err := fmt.Fprintf(w, "%s\t%s\t%s\t%s\n",
 				escapeTSV(sa.Question), escapeTSV(sa.Answer),
-				escapeTSV(c.LessonTitle), tags+" question_type::sa"); err != nil {
+				escapeTSV(c.LessonTitle), escapeTSV(tags+" question_type::sa")); err != nil {
 				return err
 			}
 		}
@@ -166,7 +166,7 @@ func WriteKeyNumbers(w io.Writer, lessons *ProcessedLessons) error {
 	if _, err := fmt.Fprintln(w, "# Key Numbers"); err != nil {
 		return err
 	}
-	for i, l := range lessons.Items {
+	for _, l := range lessons.Items {
 		if len(l.KeyNumbers) == 0 {
 			continue
 		}
@@ -180,7 +180,6 @@ func WriteKeyNumbers(w io.Writer, lessons *ProcessedLessons) error {
 		for _, v := range keys {
 			fmt.Fprintf(w, "- **%s** — %s\n", v, l.KeyNumbers[v])
 		}
-		_ = i
 	}
 	return nil
 }
@@ -203,6 +202,11 @@ func WriteChunksJSONL(w io.Writer, chunks []Chunk) error {
 // uses tabs intentionally.
 func escapeTSV(s string) string {
 	s = strings.ReplaceAll(s, "\t", "    ")
+	// Normalise carriage returns first — a bare \r or \r\n survives
+	// into the TSV otherwise, and csv.DictReader treats \r as a record
+	// terminator, splitting one card across two malformed rows.
+	s = strings.ReplaceAll(s, "\r\n", "\n")
+	s = strings.ReplaceAll(s, "\r", "\n")
 	s = strings.ReplaceAll(s, "\n", "<br>")
 	return s
 }

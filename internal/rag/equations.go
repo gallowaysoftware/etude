@@ -48,11 +48,10 @@ table, then the application note. No commentary, no preamble.`
 // and merge.
 func ExtractEquations(ctx context.Context, c *LLMClient, lessons *ProcessedLessons) (string, error) {
 	var b strings.Builder
-	for i, l := range lessons.Items {
+	for _, l := range lessons.Items {
 		fmt.Fprintf(&b, "## %s\n\n", l.Lesson)
 		b.WriteString(strings.TrimSpace(l.LectureContent))
 		b.WriteString("\n\n")
-		_ = i
 	}
 	corpus := b.String()
 	// Aggressive budget — equation extraction is one of the most

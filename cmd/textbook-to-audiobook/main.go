@@ -10,8 +10,11 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/gallowaysoftware/vibe/vamp"
 
@@ -78,7 +81,21 @@ running daemon and the right capabilities mapped. Run the
 	// a single binary for both flows.
 	root.AddCommand(ragCmd())
 
-	if err := root.Execute(); err != nil {
+	// vamp.BuildRoot leaves SilenceErrors false, so Cobra prints the
+	// error from Execute AND the block below prints it again. Silence
+	// Cobra's copy and keep the prefixed reporter here as the single
+	// printer.
+	root.SilenceErrors = true
+
+	// A signal-aware context so the rag subcommands (which thread
+	// cmd.Context() into long-running HTTP/LLM/embed loops) unwind on
+	// Ctrl-C with a final checkpoint flush instead of a hard abort.
+	// vamp's own `run` re-wraps its own signal context, so it is
+	// unaffected.
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+
+	if err := root.ExecuteContext(ctx); err != nil {
 		fmt.Fprintln(os.Stderr, "textbook-to-audiobook:", err)
 		os.Exit(1)
 	}

@@ -2,13 +2,12 @@ package rag
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 )
 
@@ -45,7 +44,7 @@ type Config struct {
 	Program string
 
 	// ChunkMaxChars is the prose-chunk character budget. Default
-	// DefaultChunkMaxChars (2400).
+	// DefaultChunkMaxChars.
 	ChunkMaxChars int
 
 	// SkipEnrichment skips the LLM enrichment pass (MC + SA
@@ -72,7 +71,7 @@ type Config struct {
 //	glossary.md        — alphabetised definitions (from structured data, no LLM)
 //	key_numbers.md     — constants by lesson (from structured data, no LLM)
 //	equations.md       — deduped equation cheat sheet (LLM-extracted)
-//	manifest.json      — embedding model id + chunk params + source hashes
+//	manifest.json      — embedding model id + chunk params + source file path
 //
 // Sequential by design — see EmbedChunks / EnrichChunks for the
 // rationale. Errors are returned as the first failure surfaces;
@@ -280,7 +279,7 @@ func Run(ctx context.Context, cfg Config) error {
 	numEquations := 0
 	if equationsMD != "" {
 		// Crude count: one ### header per equation entry.
-		numEquations = countOccurrences(equationsMD, "\n### ")
+		numEquations = strings.Count(equationsMD, "\n### ")
 	}
 	man := Manifest{
 		GeneratedAt:    time.Now().UTC().Format(time.RFC3339),
@@ -314,47 +313,4 @@ func Run(ctx context.Context, cfg Config) error {
 
 	logf("done — RAG export at %s", cfg.OutDir)
 	return nil
-}
-
-// SourceHash returns the SHA-256 of a file's bytes. Used by the
-// manifest to record what processed_lessons.json the export was
-// generated from, so a re-run of the textbook pipeline against a
-// changed lesson directory invalidates downstream consumers.
-func SourceHash(path string) (string, error) {
-	f, err := os.Open(path)
-	if err != nil {
-		return "", err
-	}
-	defer f.Close()
-	h := sha256.New()
-	if _, err := io.Copy(h, f); err != nil {
-		return "", err
-	}
-	return hex.EncodeToString(h.Sum(nil)), nil
-}
-
-func countOccurrences(s, sub string) int {
-	n := 0
-	idx := 0
-	for {
-		i := indexFrom(s, sub, idx)
-		if i < 0 {
-			return n
-		}
-		n++
-		idx = i + len(sub)
-	}
-}
-
-func indexFrom(s, sub string, from int) int {
-	if from >= len(s) {
-		return -1
-	}
-	rest := s[from:]
-	for i := 0; i+len(sub) <= len(rest); i++ {
-		if rest[i:i+len(sub)] == sub {
-			return from + i
-		}
-	}
-	return -1
 }

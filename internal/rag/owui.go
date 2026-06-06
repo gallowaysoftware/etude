@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"mime/multipart"
@@ -130,7 +131,7 @@ func chunksGroupedByLesson(path string) (map[int][]Chunk, error) {
 	for {
 		var c Chunk
 		if err := dec.Decode(&c); err != nil {
-			if err == io.EOF {
+			if errors.Is(err, io.EOF) {
 				break
 			}
 			return nil, err
@@ -209,7 +210,7 @@ func renderLessonMarkdown(chunks []Chunk) string {
 		}
 		for i, mc := range c.Enrichment.MultipleChoice {
 			fmt.Fprintf(&b, "**MC %d.** %s\n\n", i+1, mc.Question)
-			letters := []string{"A", "B", "C", "D"}
+			letters := []string{"A", "B", "C", "D", "E", "F"}
 			for j, opt := range mc.Options {
 				marker := ""
 				if j == mc.CorrectIndex {

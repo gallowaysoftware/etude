@@ -86,16 +86,19 @@ type Config struct {
 	EPUBAuthor string
 
 	// AudiobookFilenameTemplate renders the M4B output filename.
-	// Default: "module_<N>.m4b".
+	// Default: "<topic-slug>.m4b" (or module_<N>.m4b when --topic is empty).
 	AudiobookFilenameTemplate string
 	// UnitMP3FilenameTemplate renders each per-unit MP3 filename.
-	// Default: "module_<N>_<unit_id>.mp3".
+	// Default: "<topic-slug>_<parent_unit_id>.mp3" (or
+	// module_<N>_<parent_unit_id>.mp3 when --topic is empty).
 	UnitMP3FilenameTemplate string
 	// StudyGuideFilenameTemplate renders the markdown study guide
-	// filename. Default: "module_<N>_study_guide.md".
+	// filename. Default: "<topic-slug>_study_guide.md" (or
+	// module_<N>_study_guide.md when --topic is empty).
 	StudyGuideFilenameTemplate string
 	// EPUBFilenameTemplate renders the EPUB study guide filename.
-	// Default: "module_<N>_study_guide.epub".
+	// Default: "<topic-slug>_study_guide.epub" (or
+	// module_<N>_study_guide.epub when --topic is empty).
 	EPUBFilenameTemplate string
 
 	// FilenamePrefix is the basename stem used by the default

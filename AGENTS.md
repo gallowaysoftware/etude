@@ -20,7 +20,7 @@ as `go:embed` assets.
   subcommands. `cmd_rag.go` adds the downstream `rag` family.
 - `internal/pipeline/` — the DAG (`pipeline.go`) and the fork-tunable `Config`
   (`config.go`). Embedded prompts live under `internal/pipeline/prompts/`,
-  ComfyUI graphs under `workflows/`.
+  ComfyUI graphs under `internal/pipeline/workflows/`.
 - `internal/rag/` — the retrieval-augmented export (chunk → enrich → embed →
   study aids → Anki/Chroma/Open WebUI). Strict downstream of a pipeline run.
 

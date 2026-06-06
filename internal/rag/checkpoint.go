@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 )
@@ -61,8 +60,8 @@ func loadCheckpoint(outDir string) (map[string]Chunk, error) {
 		}
 		out[c.ID] = c
 	}
-	if err := scanner.Err(); err != nil && !errors.Is(err, io.EOF) {
-		return nil, err
+	if err := scanner.Err(); err != nil {
+		return nil, fmt.Errorf("scan checkpoint: %w", err)
 	}
 	return out, nil
 }

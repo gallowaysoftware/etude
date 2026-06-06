@@ -2,6 +2,7 @@ package rag
 
 import (
 	"bytes"
+	"context"
 	_ "embed"
 	"fmt"
 	"os"
@@ -28,7 +29,7 @@ var packHelperPy []byte
 // persistent database from chunks.jsonl. The script is written to
 // a temp file each run rather than relying on a $PATH-installed
 // script — keeps the helper version pinned to the binary version.
-func Pack(cfg PackConfig) error {
+func Pack(ctx context.Context, cfg PackConfig) error {
 	if cfg.ChunksFile == "" || cfg.OutDir == "" {
 		return fmt.Errorf("ChunksFile + OutDir required")
 	}
@@ -73,7 +74,7 @@ func Pack(cfg PackConfig) error {
 		}
 	}
 
-	cmd := exec.Command(python, tmpf.Name(),
+	cmd := exec.CommandContext(ctx, python, tmpf.Name(),
 		"--chunks", cfg.ChunksFile,
 		"--out", chromaDir,
 		"--collection", cfg.Collection,
