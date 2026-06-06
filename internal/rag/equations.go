@@ -54,11 +54,44 @@ func ExtractEquations(ctx context.Context, c *LLMClient, lessons *ProcessedLesso
 		b.WriteString("\n\n")
 	}
 	corpus := b.String()
-	// Aggressive budget — equation extraction is one of the most
-	// reasoning-heavy passes in the pipeline; give the model room
-	// to think before it commits.
-	return c.Chat(ctx, equationsSystemPrompt(c.Subject), corpus, ChatOpts{
-		Temperature: 0.2,
-		MaxTokens:   16384,
-	})
+	var lastErr error
+	for attempt := 1; attempt <= maxParseAttempts; attempt++ {
+		// Aggressive budget — equation extraction is one of the most
+		// reasoning-heavy passes in the pipeline; give the model room
+		// to think before it commits.
+		raw, err := c.Chat(ctx, equationsSystemPrompt(c.Subject), corpus, ChatOpts{
+			Temperature: 0.2,
+			MaxTokens:   16384,
+		})
+		if err != nil {
+			// Transport/HTTP failures won't be cured by a re-roll.
+			return "", fmt.Errorf("chat: %w", err)
+		}
+		md, perr := validateEquationsMarkdown(raw)
+		if perr == nil {
+			return md, nil
+		}
+		lastErr = perr
+	}
+	return "", fmt.Errorf("equation extraction failed after %d attempts: %w", maxParseAttempts, lastErr)
+}
+
+// validateEquationsMarkdown trims fences and confirms the response is
+// the markdown cheat sheet the prompt asks for (first non-space byte is
+// '#'). A response that's empty or prose preamble fails so the caller
+// re-rolls rather than writing a degraded equations.md.
+func validateEquationsMarkdown(raw string) (string, error) {
+	md := strings.TrimSpace(raw)
+	md = strings.TrimPrefix(md, "```markdown")
+	md = strings.TrimPrefix(md, "```md")
+	md = strings.TrimPrefix(md, "```")
+	md = strings.TrimSuffix(md, "```")
+	md = strings.TrimSpace(md)
+	if md == "" {
+		return "", fmt.Errorf("empty equation response")
+	}
+	if !strings.HasPrefix(md, "#") {
+		return "", fmt.Errorf("equation response is not markdown (first 80 chars: %.80s)", md)
+	}
+	return md, nil
 }

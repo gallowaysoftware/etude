@@ -49,6 +49,8 @@ type PushConfig struct {
 // Idempotency: OWUI does NOT dedup files by name; a re-push would
 // duplicate the lessons. We mitigate by listing existing files
 // in the collection first and skipping ones whose name matches.
+// A mid-run failure rolls back the files uploaded so far (see the
+// cleanup closure) so a retry doesn't leave orphaned uploads behind.
 func Push(ctx context.Context, cfg PushConfig) error {
 	if cfg.ChunksFile == "" || cfg.Collection == "" || cfg.OWUIToken == "" {
 		return fmt.Errorf("ChunksFile + Collection + OWUIToken required")
@@ -91,6 +93,21 @@ func Push(ctx context.Context, cfg PushConfig) error {
 	}
 	sort.Ints(lessonIndices)
 
+	// Track every file id we upload this run. A file that's uploaded
+	// to /api/v1/files/ but not yet attached to (or whose attach fails)
+	// is an orphan — it consumes storage and a server-side embedding
+	// pass but is invisible in the collection. On any mid-run failure
+	// we best-effort delete the ids uploaded so far so a retry starts
+	// clean instead of accumulating orphans on every attempt.
+	var uploaded []string
+	cleanup := func() {
+		for _, id := range uploaded {
+			if derr := owuiDeleteFile(ctx, client, cfg, id); derr != nil {
+				fmt.Fprintf(os.Stderr, "[rag] warning: couldn't delete orphaned file %s after failure: %v\n", id, derr)
+			}
+		}
+	}
+
 	for _, idx := range lessonIndices {
 		chunks := chunksByLesson[idx]
 		filename := fmt.Sprintf("lesson_%03d.md", idx)
@@ -101,9 +118,12 @@ func Push(ctx context.Context, cfg PushConfig) error {
 		body := renderLessonMarkdown(chunks)
 		fileID, err := owuiUploadFile(ctx, client, cfg, filename, body)
 		if err != nil {
+			cleanup()
 			return fmt.Errorf("upload %s: %w", filename, err)
 		}
+		uploaded = append(uploaded, fileID)
 		if err := owuiAttachFile(ctx, client, cfg, collectionID, fileID); err != nil {
+			cleanup()
 			return fmt.Errorf("attach %s: %w", filename, err)
 		}
 		pushed++
@@ -357,6 +377,29 @@ func owuiUploadFile(ctx context.Context, client *http.Client, cfg PushConfig, fi
 		return "", err
 	}
 	return parsed.ID, nil
+}
+
+// owuiDeleteFile removes an uploaded file by id. Used to roll back
+// orphaned uploads when a push fails partway. Best-effort — a delete
+// failure is logged, not propagated, so it never masks the original
+// error that triggered the cleanup.
+func owuiDeleteFile(ctx context.Context, client *http.Client, cfg PushConfig, fileID string) error {
+	url := cfg.OWUIURL + "/api/v1/files/" + fileID
+	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, url, nil)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Authorization", "Bearer "+cfg.OWUIToken)
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode/100 != 2 {
+		raw, _ := io.ReadAll(io.LimitReader(resp.Body, 4096))
+		return fmt.Errorf("OWUI HTTP %d deleting file: %s", resp.StatusCode, string(raw))
+	}
+	return nil
 }
 
 // owuiAttachFile adds an uploaded file's id to a knowledge

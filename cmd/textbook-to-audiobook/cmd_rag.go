@@ -52,9 +52,9 @@ func ragAnkiCmd() *cobra.Command {
 on any platform (desktop or mobile), File > Import, pick the .apkg —
 spaced-repetition drilling, sync across devices via AnkiWeb.
 
-Cards use stable deterministic IDs derived from front+back text, so
-re-importing an updated deck updates existing cards instead of
-duplicating.
+Cards use stable IDs derived from the source chunk id (not the card
+text), so editing a card's text and re-importing updates the existing
+card instead of orphaning the old one and adding a duplicate.
 
 Requires Python 3 + the genanki package. The Go side prefers
 ~/.local/state/textbook-to-audiobook/rag-venv if it exists (same

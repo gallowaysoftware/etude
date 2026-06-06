@@ -16,6 +16,8 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/spf13/cobra"
+
 	"github.com/gallowaysoftware/vibe/vamp"
 
 	"github.com/gallowaysoftware/textbook-to-audiobook/pipeline"
@@ -49,31 +51,33 @@ profiles (long_form text, vision, TTS, image-gen), the host must have a
 running daemon and the right capabilities mapped. Run the
 'requirements' subcommand to see what's needed.`
 
-	// First-class flags. PersistentFlags so every subcommand inherits.
-	// The factory closure above reads cfg verbatim; the values reach the
-	// pipeline via WithDefault on each input, so a user can either
-	// supply --source / --topic at the top level OR override via
-	// --input lesson_root=... on the run subcommand.
-	root.PersistentFlags().StringVar(&cfg.LessonRoot, "source", "",
-		"Directory containing Lesson_*/ subdirectories (required).")
-	root.PersistentFlags().IntVar(&cfg.ModuleNum, "module-num", 1,
-		"Numeric module identifier; used in cover seeds + output filenames.")
-	root.PersistentFlags().StringVar(&cfg.ModuleTopic, "topic", "",
-		"Short prose summary of the module (required).")
-	root.PersistentFlags().StringVar(&cfg.SearchSuffix, "search-suffix", "",
-		"Appended to every web-search query for topic enrichment.")
-	root.PersistentFlags().StringVar(&cfg.Voice, "voice", "",
-		"Kokoro voice (default af_bella).")
-	root.PersistentFlags().StringVar(&cfg.SubjectLabel, "subject", "",
-		"Field-of-study label (default 'the course subject').")
+	// --program is the one pipeline-shaping field the downstream rag
+	// family also consumes (`rag run` feeds cfg.ProgramLabel into the
+	// study-aid system prompts), so it stays a root persistent flag that
+	// every subcommand inherits. Every OTHER pipeline-shaping flag is
+	// meaningless to rag / requirements / doctor / viz / validate and
+	// only clutters their --help, so those bind to the `run` subcommand
+	// alone (see bindRunFlags). The factory closure reads cfg verbatim
+	// regardless of where a flag is bound; values reach the pipeline via
+	// WithDefault on each input, so a user can supply --source / --topic
+	// on `run` OR override via --input lesson_root=... .
 	root.PersistentFlags().StringVar(&cfg.ProgramLabel, "program", "",
 		"Program / course this material belongs to (default 'this course').")
-	root.PersistentFlags().StringVar(&cfg.ExpertPersona, "persona", "",
-		"First-person identity the lecturer prompts adopt (default 'an experienced instructor').")
-	root.PersistentFlags().StringVar(&cfg.AssessmentLabel, "assessment", "",
-		"How learners are evaluated (default 'final assessment').")
-	root.PersistentFlags().StringVar(&cfg.CoverPrompt, "cover-prompt", "",
-		"SDXL prompt for the module cover. Templated.")
+
+	// Scope the pipeline-shaping flags to the auto-registered `run`
+	// command. Done before AddCommand(ragCmd) so the rag tree (which
+	// is added below and has its own flags) never inherits them.
+	if err := bindRunFlags(root); err != nil {
+		fmt.Fprintln(os.Stderr, "textbook-to-audiobook:", err)
+		os.Exit(1)
+	}
+
+	// Validate the user-facing flags before vamp's input check fires.
+	// vamp surfaces a missing required input by its internal name
+	// ("lesson_root", "module_topic"); a PreRun on `run` that checks the
+	// bound cfg fields lets us name the actual CLI flag (--source,
+	// --topic) the user must supply instead.
+	bindRunRequiredCheck(root)
 
 	// `rag` is a strict downstream of the textbook pipeline — it
 	// consumes processed_lessons.json and produces the RAG export.
@@ -98,5 +102,77 @@ running daemon and the right capabilities mapped. Run the
 	if err := root.ExecuteContext(ctx); err != nil {
 		fmt.Fprintln(os.Stderr, "textbook-to-audiobook:", err)
 		os.Exit(1)
+	}
+}
+
+// runCommand returns the vamp-registered `run` subcommand, the only one
+// that consumes the pipeline-shaping inputs. Returns an error if it's
+// absent so a vamp API change surfaces loudly instead of silently
+// dropping the flags.
+func runCommand(root *cobra.Command) (*cobra.Command, error) {
+	for _, c := range root.Commands() {
+		if c.Name() == "run" {
+			return c, nil
+		}
+	}
+	return nil, fmt.Errorf("vamp did not register a 'run' subcommand")
+}
+
+// bindRunFlags attaches the pipeline-shaping flags to the `run`
+// subcommand instead of the root, so they don't pollute the rag /
+// requirements / doctor / viz / validate help. --program is bound on
+// root separately because the rag family also consumes it.
+func bindRunFlags(root *cobra.Command) error {
+	run, err := runCommand(root)
+	if err != nil {
+		return err
+	}
+	f := run.Flags()
+	f.StringVar(&cfg.LessonRoot, "source", "",
+		"Directory containing Lesson_*/ subdirectories (required).")
+	f.IntVar(&cfg.ModuleNum, "module-num", 1,
+		"Numeric module identifier; used in cover seeds + output filenames.")
+	f.StringVar(&cfg.ModuleTopic, "topic", "",
+		"Short prose summary of the module (required).")
+	f.StringVar(&cfg.SearchSuffix, "search-suffix", "",
+		"Appended to every web-search query for topic enrichment.")
+	f.StringVar(&cfg.Voice, "voice", "",
+		"Kokoro voice (default af_bella).")
+	f.StringVar(&cfg.SubjectLabel, "subject", "",
+		"Field-of-study label (default 'the course subject').")
+	f.StringVar(&cfg.ExpertPersona, "persona", "",
+		"First-person identity the lecturer prompts adopt (default 'an experienced instructor').")
+	f.StringVar(&cfg.AssessmentLabel, "assessment", "",
+		"How learners are evaluated (default 'final assessment').")
+	f.StringVar(&cfg.CoverPrompt, "cover-prompt", "",
+		"SDXL prompt for the module cover. Templated.")
+	return nil
+}
+
+// bindRunRequiredCheck installs a PreRunE on `run` that validates the
+// user-facing required flags before vamp's input validation runs.
+// Without it, a missing input surfaces by its internal vamp name
+// (e.g. `input "lesson_root" is required`) rather than the CLI flag the
+// user actually types (--source). vamp's run command sets no PreRunE,
+// so there's nothing to chain.
+func bindRunRequiredCheck(root *cobra.Command) {
+	run, err := runCommand(root)
+	if err != nil {
+		// bindRunFlags already reported and exited on this; if we got
+		// here the command exists, so this is unreachable in practice.
+		return
+	}
+	run.PreRunE = func(cmd *cobra.Command, args []string) error {
+		var missing []string
+		if cfg.LessonRoot == "" {
+			missing = append(missing, "--source")
+		}
+		if cfg.ModuleTopic == "" {
+			missing = append(missing, "--topic")
+		}
+		if len(missing) > 0 {
+			return fmt.Errorf("required flag(s) %v not set", missing)
+		}
+		return nil
 	}
 }

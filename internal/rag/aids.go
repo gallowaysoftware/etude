@@ -8,13 +8,19 @@ import (
 )
 
 // WriteFlashcardsTSV emits Anki-importable tab-separated flashcards.
-// One row per question: front \t back. MC questions render as
-// "Q: <question>\n A. <opt>\n B. ..." on the front and the correct
-// letter + explanation on the back. SA questions are front=question,
-// back=answer. Tabs and newlines are escaped — Anki's TSV parser
-// reads literal "\n" as a line break inside a cell.
+// One row per question: id \t front \t back \t lesson \t tags. MC
+// questions render as "Q: <question>\n A. <opt>\n B. ..." on the front
+// and the correct letter + explanation on the back. SA questions are
+// front=question, back=answer. Tabs and newlines are escaped — Anki's
+// TSV parser reads literal "\n" as a line break inside a cell.
+//
+// The leading ID column is a stable per-card identity derived from the
+// source chunk id + question type + index. anki_pack.py uses it as the
+// genanki note guid so editing a card's text doesn't orphan the prior
+// note on re-import (a content-derived guid would change with the text
+// and re-add the card instead of updating it).
 func WriteFlashcardsTSV(w io.Writer, chunks []Chunk) error {
-	if _, err := fmt.Fprintln(w, "Front\tBack\tLesson\tTags"); err != nil {
+	if _, err := fmt.Fprintln(w, "ID\tFront\tBack\tLesson\tTags"); err != nil {
 		return err
 	}
 	for _, c := range chunks {
@@ -22,17 +28,17 @@ func WriteFlashcardsTSV(w io.Writer, chunks []Chunk) error {
 			continue
 		}
 		tags := fmt.Sprintf("module::%s lesson::%03d type::prose", c.Module, c.LessonIndex)
-		for _, mc := range c.Enrichment.MultipleChoice {
+		for i, mc := range c.Enrichment.MultipleChoice {
 			letters := []string{"A", "B", "C", "D", "E", "F"}
 			var front strings.Builder
 			front.WriteString("Q: ")
 			front.WriteString(mc.Question)
-			for i, opt := range mc.Options {
-				if i >= len(letters) {
+			for j, opt := range mc.Options {
+				if j >= len(letters) {
 					break
 				}
 				front.WriteString("<br>")
-				front.WriteString(letters[i])
+				front.WriteString(letters[j])
 				front.WriteString(". ")
 				front.WriteString(opt)
 			}
@@ -48,14 +54,16 @@ func WriteFlashcardsTSV(w io.Writer, chunks []Chunk) error {
 				back.WriteString("<br><br>")
 				back.WriteString(mc.Explanation)
 			}
-			if _, err := fmt.Fprintf(w, "%s\t%s\t%s\t%s\n",
+			if _, err := fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n",
+				cardID(c.ID, "mc", i),
 				escapeTSV(front.String()), escapeTSV(back.String()),
 				escapeTSV(c.LessonTitle), escapeTSV(tags+" question_type::mc")); err != nil {
 				return err
 			}
 		}
-		for _, sa := range c.Enrichment.ShortAnswer {
-			if _, err := fmt.Fprintf(w, "%s\t%s\t%s\t%s\n",
+		for i, sa := range c.Enrichment.ShortAnswer {
+			if _, err := fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n",
+				cardID(c.ID, "sa", i),
 				escapeTSV(sa.Question), escapeTSV(sa.Answer),
 				escapeTSV(c.LessonTitle), escapeTSV(tags+" question_type::sa")); err != nil {
 				return err
@@ -63,6 +71,15 @@ func WriteFlashcardsTSV(w io.Writer, chunks []Chunk) error {
 		}
 	}
 	return nil
+}
+
+// cardID is the stable per-flashcard identity: the source chunk id, the
+// question type, and the question's index within that chunk. Stable
+// across regenerations of the same input + chunker settings, and
+// independent of the card's rendered text, so the Anki guid survives a
+// text edit.
+func cardID(chunkID, qType string, idx int) string {
+	return fmt.Sprintf("%s_%s_%d", chunkID, qType, idx)
 }
 
 // WriteStudyQA emits a human-readable markdown Q&A grouped by lesson.

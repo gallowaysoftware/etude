@@ -3,11 +3,16 @@
 
 Run via: python3 anki_pack.py --flashcards <tsv> --out <apkg> --deck-name <name>
 
-The TSV has the header "Front\tBack\tLesson\tTags" — produced by
+The TSV has the header "ID\tFront\tBack\tLesson\tTags" — produced by
 internal/rag.WriteFlashcardsTSV. Two card models: 'Basic' (the
 default Anki shape: Front + Back) and our deck uses it for both MC
 and SA cards. Tags carry the lesson + question_type so Anki users
 can filter / sub-deck.
+
+The ID column is a stable per-card identity (derived from the source
+chunk id, not the card text). It becomes the genanki note guid so
+editing a card's front/back updates the existing note on re-import
+instead of orphaning the old one and adding a duplicate.
 
 Requires the genanki package (pip install genanki). The Go-side
 PackAnki invocation expects this script to land in a venv at
@@ -75,10 +80,11 @@ small { color: #888; }
     )
     deck = genanki.Deck(deck_id, args.deck_name)
 
-    seen_card_ids = set()
+    seen_guids = set()
     with open(args.flashcards, newline="") as f:
         reader = csv.DictReader(f, delimiter="\t")
         for i, row in enumerate(reader):
+            card_id = (row.get("ID") or "").strip()
             front = (row.get("Front") or "").strip()
             back = (row.get("Back") or "").strip()
             lesson = (row.get("Lesson") or "").strip()
@@ -86,25 +92,29 @@ small { color: #888; }
             if not front or not back:
                 continue
             tags = [t for t in tags_str.split() if t]
-            # Deterministic card id so re-imports update existing.
-            card_seed = front + "::" + back
-            card_id = stable_id("note:" + card_seed)
-            if card_id in seen_card_ids:
-                # Hash collision (extremely unlikely with sha256 → int31);
-                # nudge by appending the row index.
-                card_id = stable_id("note:" + card_seed + ":" + str(i))
-            seen_card_ids.add(card_id)
+            # Guid keyed on the stable per-card id (source chunk id +
+            # question type + index), NOT the card text, so editing a
+            # card's front/back updates the existing note on re-import
+            # instead of orphaning it. Fall back to a content hash for
+            # rows that predate the ID column.
+            seed = card_id if card_id else (front + "::" + back)
+            guid = genanki.guid_for(seed)
+            if guid in seen_guids:
+                # Defensive: a duplicate id would make Anki treat the
+                # second card as the same note. Disambiguate by row.
+                guid = genanki.guid_for(seed + ":" + str(i))
+            seen_guids.add(guid)
             note = genanki.Note(
                 model=model,
                 fields=[front, back, lesson],
                 tags=tags,
-                guid=str(card_id),
+                guid=guid,
             )
             deck.add_note(note)
 
     genanki.Package(deck).write_to_file(args.out)
     print(
-        f"wrote {len(seen_card_ids)} cards to {args.out} (deck '{args.deck_name}')",
+        f"wrote {len(seen_guids)} cards to {args.out} (deck '{args.deck_name}')",
         file=sys.stderr,
     )
     return 0

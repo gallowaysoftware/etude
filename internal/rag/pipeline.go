@@ -154,9 +154,13 @@ func Run(ctx context.Context, cfg Config) error {
 		}
 	}
 
-	// Checkpoint hook — writes the chunks slice to chunks_partial.jsonl
-	// after each completed chunk. atomic write-then-rename so a crash
-	// during checkpoint doesn't corrupt the file the next --resume reads.
+	// Checkpoint hook — writes the whole chunks slice to
+	// chunks_partial.jsonl. atomic write-then-rename so a crash during
+	// checkpoint doesn't corrupt the file the next --resume reads.
+	//
+	// Each call rewrites the entire slice, so calling it per-chunk over
+	// N chunks costs O(N^2) total write work. Callers throttle it (see
+	// checkpointEvery) and flush once at the end of a pass.
 	checkpoint := func() {
 		if err := writeCheckpoint(cfg.OutDir, chunks); err != nil {
 			// Non-fatal: a failed checkpoint write means the next resume
@@ -164,6 +168,11 @@ func Run(ctx context.Context, cfg Config) error {
 			logf("warning: checkpoint write failed: %v", err)
 		}
 	}
+
+	// checkpointEvery bounds the per-chunk rewrite cost: checkpoint
+	// every 50 completed chunks instead of every one. A kill loses at
+	// most this many chunks of work, matching the embed pass's cadence.
+	const checkpointEvery = 50
 
 	// ---- enrich ----
 	llm := NewLLMClient(cfg.LLMURL, cfg.LLMModel, cfg.Program)
@@ -183,11 +192,17 @@ func Run(ctx context.Context, cfg Config) error {
 		}
 		err := EnrichChunks(ctx, llm, chunks, func(done, total int) {
 			logf("  enriched %d/%d", done, total)
-			checkpoint()
+			if done%checkpointEvery == 0 {
+				checkpoint()
+			}
 		})
 		if err != nil {
 			return fmt.Errorf("enrich: %w", err)
 		}
+		// Flush once at the end so a kill during the (long) equation
+		// pass that follows doesn't discard the tail of enrichment that
+		// fell between the last throttled checkpoint and completion.
+		checkpoint()
 	}
 
 	// ---- equations ----

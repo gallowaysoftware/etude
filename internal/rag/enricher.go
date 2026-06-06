@@ -53,7 +53,7 @@ func (c *LLMClient) Chat(ctx context.Context, system, user string, opts ChatOpts
 	if opts.MaxTokens == 0 {
 		opts.MaxTokens = 4096
 	}
-	body, err := json.Marshal(map[string]any{
+	payload := map[string]any{
 		"model": c.Model,
 		"messages": []map[string]string{
 			{"role": "system", "content": system},
@@ -61,7 +61,16 @@ func (c *LLMClient) Chat(ctx context.Context, system, user string, opts ChatOpts
 		},
 		"temperature": opts.Temperature,
 		"max_tokens":  opts.MaxTokens,
-	})
+	}
+	// Ask the server to constrain decoding to a JSON object when the
+	// caller expects strict JSON. OpenAI-compatible servers that don't
+	// recognise response_format ignore it, so this is safe to send
+	// unconditionally for JSON callers — it tightens output where
+	// supported and is a no-op elsewhere (the parse-retry covers the rest).
+	if opts.JSONMode {
+		payload["response_format"] = map[string]string{"type": "json_object"}
+	}
+	body, err := json.Marshal(payload)
 	if err != nil {
 		return "", fmt.Errorf("marshal: %w", err)
 	}
@@ -99,7 +108,17 @@ func (c *LLMClient) Chat(ctx context.Context, system, user string, opts ChatOpts
 type ChatOpts struct {
 	Temperature float64
 	MaxTokens   int
+	// JSONMode asks the server to constrain output to a JSON object via
+	// response_format. Servers that don't support it ignore the field.
+	JSONMode bool
 }
+
+// maxParseAttempts bounds how many times a structured-output LLM call
+// is retried when the response fails to parse. The model is
+// nondeterministic, so a re-roll often fixes a one-off malformed
+// response; an unbounded loop would hang on a systematically broken
+// prompt/server, so cap it and surface the final error.
+const maxParseAttempts = 3
 
 // enrichSystemPrompt is the system message for the per-chunk
 // enrichment pass. Asks for strict JSON output so the response
@@ -159,14 +178,33 @@ func EnrichChunk(ctx context.Context, c *LLMClient, chunk *Chunk) error {
 		"Lesson: %s\n\nChunk:\n%s",
 		chunk.LessonTitle, chunk.Text,
 	)
-	raw, err := c.Chat(ctx, enrichSystemPrompt(c.Subject), userMsg, ChatOpts{
-		Temperature: 0.3,
-		MaxTokens:   8192,
-	})
-	if err != nil {
-		return fmt.Errorf("chat: %w", err)
+	var lastErr error
+	for attempt := 1; attempt <= maxParseAttempts; attempt++ {
+		raw, err := c.Chat(ctx, enrichSystemPrompt(c.Subject), userMsg, ChatOpts{
+			Temperature: 0.3,
+			MaxTokens:   8192,
+			JSONMode:    true,
+		})
+		if err != nil {
+			// A transport/HTTP error won't be fixed by re-rolling the
+			// same request, so fail fast rather than burning attempts.
+			return fmt.Errorf("chat: %w", err)
+		}
+		enr, perr := parseEnrichment(raw)
+		if perr == nil {
+			chunk.Enrichment = enr
+			return nil
+		}
+		lastErr = perr
 	}
-	// Strip any accidental markdown fences the model may add.
+	return fmt.Errorf("enrichment failed after %d attempts: %w", maxParseAttempts, lastErr)
+}
+
+// parseEnrichment strips any markdown fences the model adds and
+// unmarshals the strict-JSON enrichment payload. Split out so the
+// fence-tolerance and parse contract are unit-testable without a live
+// LLM.
+func parseEnrichment(raw string) (*Enrichment, error) {
 	raw = strings.TrimSpace(raw)
 	raw = strings.TrimPrefix(raw, "```json")
 	raw = strings.TrimPrefix(raw, "```")
@@ -174,10 +212,9 @@ func EnrichChunk(ctx context.Context, c *LLMClient, chunk *Chunk) error {
 	raw = strings.TrimSpace(raw)
 	var enr Enrichment
 	if err := json.Unmarshal([]byte(raw), &enr); err != nil {
-		return fmt.Errorf("unmarshal enrichment (raw: %.200s): %w", raw, err)
+		return nil, fmt.Errorf("unmarshal enrichment (raw: %.200s): %w", raw, err)
 	}
-	chunk.Enrichment = &enr
-	return nil
+	return &enr, nil
 }
 
 // EnrichChunks runs enrichment over every prose chunk. Sequential
