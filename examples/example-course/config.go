@@ -30,7 +30,7 @@ package examplecourse
 import (
 	"fmt"
 
-	"github.com/gallowaysoftware/textbook-to-audiobook/internal/pipeline"
+	"github.com/gallowaysoftware/textbook-to-audiobook/pipeline"
 )
 
 // ExampleCourseConfig returns a textbook-to-audiobook Config skinned for

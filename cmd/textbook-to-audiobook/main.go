@@ -18,7 +18,7 @@ import (
 
 	"github.com/gallowaysoftware/vibe/vamp"
 
-	"github.com/gallowaysoftware/textbook-to-audiobook/internal/pipeline"
+	"github.com/gallowaysoftware/textbook-to-audiobook/pipeline"
 )
 
 // cfg is populated by Cobra flag binding on the root command before any

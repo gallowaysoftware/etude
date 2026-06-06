@@ -18,9 +18,9 @@ as `go:embed` assets.
   persistent flags into a `pipeline.Config`; `vamp.BuildRoot` auto-registers
   the `run` / `requirements` / `doctor` / `activate` / `viz` / `validate`
   subcommands. `cmd_rag.go` adds the downstream `rag` family.
-- `internal/pipeline/` — the DAG (`pipeline.go`) and the fork-tunable `Config`
-  (`config.go`). Embedded prompts live under `internal/pipeline/prompts/`,
-  ComfyUI graphs under `internal/pipeline/workflows/`.
+- `pipeline/` — the DAG (`pipeline.go`) and the fork-tunable `Config`
+  (`config.go`). Public so external forks can import it. Embedded prompts live
+  under `pipeline/prompts/`, ComfyUI graphs under `pipeline/workflows/`.
 - `internal/rag/` — the retrieval-augmented export (chunk → enrich → embed →
   study aids → Anki/Chroma/Open WebUI). Strict downstream of a pipeline run.
 

@@ -75,7 +75,7 @@ The runtime still needs vibe + the right model backends; the binary is the pipel
 
 ## Configurability
 
-All curriculum-specific surface area is in `internal/pipeline/config.go` as a `Config` struct. The top-level CLI flags write into it:
+All curriculum-specific surface area is in `pipeline/config.go` as a `Config` struct. The top-level CLI flags write into it:
 
 | Flag | Config field | What it controls |
 |---|---|---|
