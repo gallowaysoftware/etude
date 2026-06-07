@@ -18,10 +18,10 @@ func TestValidateEmbeddingDims(t *testing.T) {
 			wantDim: 1024,
 		},
 		{
-			name:    "matches expected",
-			chunks:  []Chunk{{ID: "a", Embedding: vec(1024)}},
-			wantDim: 1024,
-			// expected set below
+			name:     "matches expected",
+			chunks:   []Chunk{{ID: "a", Embedding: vec(1024)}},
+			expected: 1024,
+			wantDim:  1024,
 		},
 		{
 			name:    "mismatched dims",
@@ -43,12 +43,7 @@ func TestValidateEmbeddingDims(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// "matches expected" exercises the expected==dim path.
-			expected := tt.expected
-			if tt.name == "matches expected" {
-				expected = 1024
-			}
-			dim, err := validateEmbeddingDims(tt.chunks, expected)
+			dim, err := validateEmbeddingDims(tt.chunks, tt.expected)
 			if tt.wantErr {
 				if err == nil {
 					t.Fatalf("expected error, got dim=%d", dim)

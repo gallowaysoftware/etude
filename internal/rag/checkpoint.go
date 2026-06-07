@@ -73,13 +73,12 @@ func loadCheckpoint(outDir string) (map[string]Chunk, error) {
 // Otherwise the chunk re-does that work on the next run. Returns
 // (merged-slice, stats).
 type checkpointStats struct {
-	totalChunks       int
 	carriedEnrichment int
 	carriedEmbedding  int
 }
 
 func applyCheckpoint(fresh []Chunk, prior map[string]Chunk) ([]Chunk, checkpointStats) {
-	stats := checkpointStats{totalChunks: len(fresh)}
+	var stats checkpointStats
 	for i := range fresh {
 		p, ok := prior[fresh[i].ID]
 		if !ok || p.Text != fresh[i].Text {

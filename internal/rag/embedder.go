@@ -68,7 +68,7 @@ func (c *EmbedClient) Embed(ctx context.Context, text string) ([]float32, error)
 		// past "useful signal." The < 256 floor below trips first.
 		newLen := len(cur) / 2
 		if newLen < 256 {
-			return nil, fmt.Errorf("embed: text too dense to fit (gave up after shrinking to %d chars): %w", len(cur), err)
+			return nil, fmt.Errorf("embed: text too dense to fit (next shrink would fall below the 256-char floor, from %d chars): %w", len(cur), err)
 		}
 		cur = truncRunes(cur, newLen)
 	}

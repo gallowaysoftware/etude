@@ -58,7 +58,7 @@ textbook-to-audiobook rag pack \
   --collection module_1
 ```
 
-Outputs include `chunks.jsonl` (source of truth, embeddings + LLM enrichment), `chroma_db/` (loadable), `flashcards.tsv` (Anki), `study_qa.md`, `glossary.md`, `key_numbers.md`, `equations.md`, and `manifest.json`.
+`rag run` outputs `chunks.jsonl` (source of truth, embeddings + LLM enrichment), `flashcards.tsv` (Anki), `study_qa.md`, `glossary.md`, `key_numbers.md`, `equations.md`, and `manifest.json`. `rag pack` then derives the loadable `chroma_db/` directory from `chunks.jsonl`.
 
 `rag pack` and `rag anki` shell out to Python helpers — `rag pack` needs the `chromadb` package, `rag anki` needs `genanki`. Both prefer a venv at `~/.local/state/textbook-to-audiobook/rag-venv` if present (set `TEXTBOOK_RAG_PYTHON` to point elsewhere); otherwise `python3` on `$PATH` must have the package installed. The study-aid prompts frame themselves around `--program`, so pass it (e.g. `--program "an introductory astronomy course"`) for material-appropriate questions; it defaults to generic exam-prep language.
 

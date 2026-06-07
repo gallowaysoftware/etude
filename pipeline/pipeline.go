@@ -15,8 +15,8 @@ import (
 // having the curriculum-specific surface baked in.
 //
 // The caller (typically the binary's cobra factory closure) builds a
-// Config from CLI flags, applies WithDefaults, and hands the result to
-// Build. The returned pipeline is already validated.
+// Config from CLI flags and hands it to Build, which applies
+// WithDefaults itself. The returned pipeline is already validated.
 func Build(cfg Config) (*vamp.Pipeline, error) {
 	cfg = cfg.WithDefaults()
 	// Required-input validation happens at vamp run time via the

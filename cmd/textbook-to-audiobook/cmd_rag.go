@@ -12,7 +12,8 @@ import (
 
 // ragCmd is the umbrella for the RAG-export subcommands: `rag run`
 // produces all the artefacts, `rag pack` builds the chroma_db
-// directory, `rag push` ships the export to Open WebUI.
+// directory, `rag push` ships the export to Open WebUI, and `rag anki`
+// packs flashcards.tsv into an Anki deck.
 //
 // The pipeline-level `textbook-to-audiobook run` produces the audio
 // + EPUB + study guide; the `rag` family is a strict downstream of
@@ -23,13 +24,14 @@ import (
 func ragCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "rag",
-		Short: "RAG-export subcommands (run / pack / push).",
+		Short: "RAG-export subcommands (run / pack / push / anki).",
 		Long: `rag produces the retrieval-augmented exports from a prior
 textbook-to-audiobook run's processed_lessons.json:
 
   rag run    — chunk + enrich + embed + study aids
   rag pack   — build chroma_db/ from chunks.jsonl
   rag push   — POST the export to Open WebUI's Knowledge API
+  rag anki   — pack flashcards.tsv into an Anki .apkg deck
 `,
 	}
 	cmd.AddCommand(ragRunCmd())
@@ -107,8 +109,8 @@ Requires:
   - The embedding server running, vibe start embed_bge_large (port :14004)
   - The LLM proxy running, vibe start <long_form profile> (proxy :9000)
 
-For Module 1: --lessons points at the merge_lessons output of a
-prior textbook run, --out at a directory under the same run.
+--lessons points at the merge_lessons output (processed_lessons.json)
+of a prior textbook run; --out at a directory under that run.
 `,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := cmd.Context()
@@ -184,11 +186,10 @@ TEXTBOOK_RAG_PYTHON to override.
 
 func ragPushCmd() *cobra.Command {
 	var (
-		chunksFile  string
-		lessonsFile string
-		owuiURL     string
-		owuiToken   string
-		collection  string
+		chunksFile string
+		owuiURL    string
+		owuiToken  string
+		collection string
 	)
 	cmd := &cobra.Command{
 		Use:   "push",
@@ -215,21 +216,18 @@ Pass it via --owui-token or the OPEN_WEBUI_TOKEN env var.
 				return fmt.Errorf("--owui-token or OPEN_WEBUI_TOKEN env var required (get one at Open WebUI Settings → Account → API Keys)")
 			}
 			return rag.Push(cmd.Context(), rag.PushConfig{
-				ChunksFile:  chunksFile,
-				LessonsFile: lessonsFile,
-				OWUIURL:     owuiURL,
-				OWUIToken:   owuiToken,
-				Collection:  collection,
+				ChunksFile: chunksFile,
+				OWUIURL:    owuiURL,
+				OWUIToken:  owuiToken,
+				Collection: collection,
 			})
 		},
 	}
 	cmd.Flags().StringVar(&chunksFile, "chunks", "", "Path to chunks.jsonl (required).")
-	cmd.Flags().StringVar(&lessonsFile, "lessons", "", "Path to processed_lessons.json (required — used for per-lesson grouping context).")
 	cmd.Flags().StringVar(&owuiURL, "owui-url", "http://127.0.0.1:14001", "Open WebUI base URL.")
 	cmd.Flags().StringVar(&owuiToken, "owui-token", "", "Open WebUI API token (or OPEN_WEBUI_TOKEN env).")
 	cmd.Flags().StringVar(&collection, "collection", "", "Open WebUI Knowledge collection name (required).")
 	_ = cmd.MarkFlagRequired("chunks")
-	_ = cmd.MarkFlagRequired("lessons")
 	_ = cmd.MarkFlagRequired("collection")
 	return cmd
 }

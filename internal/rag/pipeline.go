@@ -86,6 +86,12 @@ func Run(ctx context.Context, cfg Config) error {
 	if cfg.Module == "" {
 		return fmt.Errorf("module is required")
 	}
+	// Module is interpolated into chunk IDs and OWUI filenames, so a
+	// path separator or space would corrupt those identifiers (or, with
+	// a slash, escape the output dir on the push path).
+	if strings.ContainsAny(cfg.Module, `/\ `) {
+		return fmt.Errorf("module %q must not contain slashes, backslashes, or spaces", cfg.Module)
+	}
 	if cfg.EmbedURL == "" {
 		cfg.EmbedURL = "http://127.0.0.1:14004"
 	}
@@ -197,6 +203,10 @@ func Run(ctx context.Context, cfg Config) error {
 			}
 		})
 		if err != nil {
+			// Persist the chunks enriched between the last throttled
+			// checkpoint and the kill/error so a Ctrl-C doesn't discard
+			// up to checkpointEvery chunks of completed LLM work.
+			checkpoint()
 			return fmt.Errorf("enrich: %w", err)
 		}
 		// Flush once at the end so a kill during the (long) equation
@@ -254,6 +264,9 @@ func Run(ctx context.Context, cfg Config) error {
 		}
 	})
 	if err != nil {
+		// Persist the chunks embedded since the last throttled checkpoint
+		// so a Ctrl-C mid-embed doesn't discard completed vectors.
+		checkpoint()
 		return fmt.Errorf("embed: %w", err)
 	}
 	// Final checkpoint after the embed pass — covers the case where
@@ -346,6 +359,14 @@ func Run(ctx context.Context, cfg Config) error {
 		return fmt.Errorf("close manifest: %w", err)
 	}
 	logf("wrote %s", manPath)
+
+	// The run completed, so chunks.jsonl is the authoritative copy and
+	// the checkpoint is stale duplicate state. Remove it so a later
+	// --resume doesn't reload an outdated snapshot. Best-effort — a
+	// leftover checkpoint is harmless, just redundant.
+	if rmErr := os.Remove(filepath.Join(cfg.OutDir, CheckpointFilename)); rmErr != nil && !os.IsNotExist(rmErr) {
+		logf("warning: couldn't remove checkpoint %s: %v", CheckpointFilename, rmErr)
+	}
 
 	logf("done — RAG export at %s", cfg.OutDir)
 	return nil

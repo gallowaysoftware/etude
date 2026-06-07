@@ -76,10 +76,12 @@ type Config struct {
 	// {{ .inputs.module_topic }} at run time.
 	CoverPrompt string
 
-	// EPUBTitleTemplate renders the EPUB's title metadata. Templated
-	// against {{ .inputs.module_num }} and {{ .inputs.module_topic }}.
-	// Default produces "<ProgramLabel> Module <N> — <topic> (Study
-	// Guide)".
+	// EPUBTitleTemplate is the EPUB's title metadata as a literal string,
+	// not a Go template — Pandoc's --metadata title= takes a literal, so
+	// a template reference would land in the EPUB verbatim. Default,
+	// composed at WithDefaults time, is "<title-cased topic> (Study
+	// Guide)", falling back to "The Course Material (Study Guide)" when
+	// --topic is empty.
 	EPUBTitleTemplate string
 	// EPUBAuthor sets the EPUB's author metadata. Default credits the
 	// pipeline rather than the operator.

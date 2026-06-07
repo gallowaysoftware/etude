@@ -31,7 +31,7 @@ func (e *jsonlEncoder) encode(v any) error {
 	return nil
 }
 
-// Close flushes the underlying buffer. Callers SHOULD call this
-// before the writer is closed; otherwise the tail of the file may be
-// missing.
-func (e *jsonlEncoder) Close() error { return e.bw.Flush() }
+// Flush writes any buffered output to the underlying writer; it does
+// not close that writer (the caller owns it). Callers MUST call this
+// before closing the writer or the tail of the file may be missing.
+func (e *jsonlEncoder) Flush() error { return e.bw.Flush() }

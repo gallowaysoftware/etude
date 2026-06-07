@@ -19,10 +19,11 @@ type LLMClient struct {
 	BaseURL string
 	Model   string
 	HTTP    *http.Client
-	// Subject is the course/program descriptor woven into the study-aid
+	// Program is the course/program descriptor woven into the study-aid
 	// system prompts so the open pipeline ships no curriculum-specific
-	// identity. Defaults to a generic "exam preparation".
-	Subject string
+	// identity. Fed from --program. Defaults to a generic "exam
+	// preparation".
+	Program string
 }
 
 // NewLLMClient returns a client. baseURL is the proxy root (no /v1
@@ -34,14 +35,14 @@ type LLMClient struct {
 // inference can run 10-20 minutes on a 27B model. Smaller calls
 // finish in seconds — the long timeout is only consumed when an
 // equation pass actually needs it.
-func NewLLMClient(baseURL, model, subject string) *LLMClient {
-	if subject == "" {
-		subject = "exam preparation"
+func NewLLMClient(baseURL, model, program string) *LLMClient {
+	if program == "" {
+		program = "exam preparation"
 	}
 	return &LLMClient{
 		BaseURL: strings.TrimRight(baseURL, "/"),
 		Model:   model,
-		Subject: subject,
+		Program: program,
 		HTTP:    &http.Client{Timeout: 30 * time.Minute},
 	}
 }
@@ -123,10 +124,10 @@ const maxParseAttempts = 3
 // enrichSystemPrompt is the system message for the per-chunk
 // enrichment pass. Asks for strict JSON output so the response
 // round-trips through json.Unmarshal without parsing tricks. The
-// subject descriptor is injected at run time so the open pipeline
+// program descriptor is injected at run time so the open pipeline
 // ships no curriculum-specific identity.
-func enrichSystemPrompt(subject string) string {
-	return "You are a study-aid generator for " + subject + ".\n\n" + `Given one chunk of a lesson's content, produce structured study
+func enrichSystemPrompt(program string) string {
+	return "You are a study-aid generator for " + program + ".\n\n" + `Given one chunk of a lesson's content, produce structured study
 material in strict JSON matching the schema below. No prose
 preamble, no markdown fences — first byte is '{'.
 
@@ -180,7 +181,7 @@ func EnrichChunk(ctx context.Context, c *LLMClient, chunk *Chunk) error {
 	)
 	var lastErr error
 	for attempt := 1; attempt <= maxParseAttempts; attempt++ {
-		raw, err := c.Chat(ctx, enrichSystemPrompt(c.Subject), userMsg, ChatOpts{
+		raw, err := c.Chat(ctx, enrichSystemPrompt(c.Program), userMsg, ChatOpts{
 			Temperature: 0.3,
 			MaxTokens:   8192,
 			JSONMode:    true,

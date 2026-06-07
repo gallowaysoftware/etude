@@ -82,7 +82,13 @@ small { color: #888; }
 
     seen_guids = set()
     with open(args.flashcards, newline="") as f:
-        reader = csv.DictReader(f, delimiter="\t")
+        # QUOTE_NONE: the Go side (escapeTSV) flattens tabs/newlines but
+        # leaves literal double-quotes in card text untouched. With the
+        # default quoting a card containing a '"' would make DictReader
+        # treat it as a field delimiter and merge columns, corrupting the
+        # card. Our fields never contain a raw tab, so disabling quoting
+        # is safe and the only correct read of this dialect.
+        reader = csv.DictReader(f, delimiter="\t", quoting=csv.QUOTE_NONE)
         for i, row in enumerate(reader):
             card_id = (row.get("ID") or "").strip()
             front = (row.get("Front") or "").strip()

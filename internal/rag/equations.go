@@ -8,11 +8,11 @@ import (
 
 // equationsSystemPrompt asks the LLM to scan a textbook corpus and
 // extract every equation / load-bearing numerical relationship with
-// its context. Output is markdown grouped by topic. The subject
+// its context. Output is markdown grouped by topic. The program
 // descriptor is injected at run time so the open pipeline ships no
 // curriculum-specific identity.
-func equationsSystemPrompt(subject string) string {
-	return "You are a study-aid generator for " + subject + ".\n\n" + `Given the full text of a textbook module, identify EVERY equation,
+func equationsSystemPrompt(program string) string {
+	return "You are a study-aid generator for " + program + ".\n\n" + `Given the full text of a textbook module, identify EVERY equation,
 formula, or load-bearing numerical relationship a student must
 memorise for the exam. Group them by topic. For each one, write:
 
@@ -59,7 +59,7 @@ func ExtractEquations(ctx context.Context, c *LLMClient, lessons *ProcessedLesso
 		// Aggressive budget — equation extraction is one of the most
 		// reasoning-heavy passes in the pipeline; give the model room
 		// to think before it commits.
-		raw, err := c.Chat(ctx, equationsSystemPrompt(c.Subject), corpus, ChatOpts{
+		raw, err := c.Chat(ctx, equationsSystemPrompt(c.Program), corpus, ChatOpts{
 			Temperature: 0.2,
 			MaxTokens:   16384,
 		})

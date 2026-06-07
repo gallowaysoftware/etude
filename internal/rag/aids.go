@@ -7,12 +7,18 @@ import (
 	"strings"
 )
 
+// mcOptionLetters labels multiple-choice options A..F. Enrichment caps
+// MC questions at four options, so six covers any over-generation
+// without an index check at every call site.
+var mcOptionLetters = []string{"A", "B", "C", "D", "E", "F"}
+
 // WriteFlashcardsTSV emits Anki-importable tab-separated flashcards.
 // One row per question: id \t front \t back \t lesson \t tags. MC
-// questions render as "Q: <question>\n A. <opt>\n B. ..." on the front
-// and the correct letter + explanation on the back. SA questions are
-// front=question, back=answer. Tabs and newlines are escaped — Anki's
-// TSV parser reads literal "\n" as a line break inside a cell.
+// questions render as "Q: <question><br>A. <opt><br>B. ..." on the
+// front and the correct letter + explanation on the back. SA questions
+// are front=question, back=answer. Tabs become spaces and newlines
+// become "<br>" (see escapeTSV) so each card stays on one TSV row —
+// Anki renders "<br>" as a line break when the card displays.
 //
 // The leading ID column is a stable per-card identity derived from the
 // source chunk id + question type + index. anki_pack.py uses it as the
@@ -29,22 +35,21 @@ func WriteFlashcardsTSV(w io.Writer, chunks []Chunk) error {
 		}
 		tags := fmt.Sprintf("module::%s lesson::%03d type::prose", c.Module, c.LessonIndex)
 		for i, mc := range c.Enrichment.MultipleChoice {
-			letters := []string{"A", "B", "C", "D", "E", "F"}
 			var front strings.Builder
 			front.WriteString("Q: ")
 			front.WriteString(mc.Question)
 			for j, opt := range mc.Options {
-				if j >= len(letters) {
+				if j >= len(mcOptionLetters) {
 					break
 				}
 				front.WriteString("<br>")
-				front.WriteString(letters[j])
+				front.WriteString(mcOptionLetters[j])
 				front.WriteString(". ")
 				front.WriteString(opt)
 			}
 			var back strings.Builder
-			if mc.CorrectIndex >= 0 && mc.CorrectIndex < len(letters) {
-				back.WriteString(letters[mc.CorrectIndex])
+			if mc.CorrectIndex >= 0 && mc.CorrectIndex < len(mcOptionLetters) {
+				back.WriteString(mcOptionLetters[mc.CorrectIndex])
 				back.WriteString(". ")
 				if mc.CorrectIndex < len(mc.Options) {
 					back.WriteString(mc.Options[mc.CorrectIndex])
@@ -120,14 +125,13 @@ func WriteStudyQA(w io.Writer, chunks []Chunk) error {
 			}
 			for i, mc := range c.Enrichment.MultipleChoice {
 				fmt.Fprintf(w, "**MC %d.** %s\n\n", i+1, mc.Question)
-				letters := []string{"A", "B", "C", "D", "E", "F"}
 				for j, opt := range mc.Options {
 					marker := ""
 					if j == mc.CorrectIndex {
 						marker = " ✓"
 					}
-					if j < len(letters) {
-						fmt.Fprintf(w, "  %s. %s%s\n", letters[j], opt, marker)
+					if j < len(mcOptionLetters) {
+						fmt.Fprintf(w, "  %s. %s%s\n", mcOptionLetters[j], opt, marker)
 					}
 				}
 				if mc.Explanation != "" {
@@ -210,7 +214,7 @@ func WriteChunksJSONL(w io.Writer, chunks []Chunk) error {
 			return err
 		}
 	}
-	return enc.Close()
+	return enc.Flush()
 }
 
 // escapeTSV maps embedded tabs to spaces and newlines to "<br>" so

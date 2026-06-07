@@ -21,13 +21,6 @@ type PushConfig struct {
 	OWUIURL    string
 	OWUIToken  string
 	Collection string
-	// LessonsFile is the original processed_lessons.json. Used to
-	// render one richly-formatted markdown file per lesson rather
-	// than 1500 files-per-chunk (OWUI re-embeds everything anyway
-	// with its own bge-m3 model, so granular-chunk fidelity is
-	// lost on this path; per-lesson is the more navigable
-	// granularity).
-	LessonsFile string
 }
 
 // Push uploads the module to Open WebUI's Knowledge as one
@@ -54,9 +47,6 @@ type PushConfig struct {
 func Push(ctx context.Context, cfg PushConfig) error {
 	if cfg.ChunksFile == "" || cfg.Collection == "" || cfg.OWUIToken == "" {
 		return fmt.Errorf("ChunksFile + Collection + OWUIToken required")
-	}
-	if cfg.LessonsFile == "" {
-		return fmt.Errorf("LessonsFile required (--lessons)")
 	}
 	if cfg.OWUIURL == "" {
 		cfg.OWUIURL = "http://127.0.0.1:14001"
@@ -101,8 +91,14 @@ func Push(ctx context.Context, cfg PushConfig) error {
 	// clean instead of accumulating orphans on every attempt.
 	var uploaded []string
 	cleanup := func() {
+		// A Ctrl-C cancels ctx, which is usually what triggers cleanup —
+		// reusing that cancelled ctx would make every rollback delete fail
+		// instantly, leaving orphans behind. Detach from cancellation and
+		// give the deletes a bounded window of their own.
+		delCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 30*time.Second)
+		defer cancel()
 		for _, id := range uploaded {
-			if derr := owuiDeleteFile(ctx, client, cfg, id); derr != nil {
+			if derr := owuiDeleteFile(delCtx, client, cfg, id); derr != nil {
 				fmt.Fprintf(os.Stderr, "[rag] warning: couldn't delete orphaned file %s after failure: %v\n", id, derr)
 			}
 		}
@@ -110,7 +106,10 @@ func Push(ctx context.Context, cfg PushConfig) error {
 
 	for _, idx := range lessonIndices {
 		chunks := chunksByLesson[idx]
-		filename := fmt.Sprintf("lesson_%03d.md", idx)
+		// Prefix the module so lessons from different modules pushed into
+		// the same collection don't collide on lesson index — without it
+		// module_2's lesson_001.md is skipped as a dup of module_1's.
+		filename := fmt.Sprintf("%s_lesson_%03d.md", chunks[0].Module, idx)
 		if existingNames[filename] {
 			skipped++
 			continue
@@ -230,14 +229,13 @@ func renderLessonMarkdown(chunks []Chunk) string {
 		}
 		for i, mc := range c.Enrichment.MultipleChoice {
 			fmt.Fprintf(&b, "**MC %d.** %s\n\n", i+1, mc.Question)
-			letters := []string{"A", "B", "C", "D", "E", "F"}
 			for j, opt := range mc.Options {
 				marker := ""
 				if j == mc.CorrectIndex {
 					marker = " ✓"
 				}
-				if j < len(letters) {
-					fmt.Fprintf(&b, "  %s. %s%s\n", letters[j], opt, marker)
+				if j < len(mcOptionLetters) {
+					fmt.Fprintf(&b, "  %s. %s%s\n", mcOptionLetters[j], opt, marker)
 				}
 			}
 			if mc.Explanation != "" {
@@ -356,7 +354,11 @@ func owuiUploadFile(ctx context.Context, client *http.Client, cfg PushConfig, fi
 	if _, err := fw.Write([]byte(body)); err != nil {
 		return "", err
 	}
-	mw.Close()
+	// Close writes the multipart trailer; a failure here means the body
+	// is truncated, so send nothing rather than a malformed upload.
+	if err := mw.Close(); err != nil {
+		return "", err
+	}
 	url := cfg.OWUIURL + "/api/v1/files/"
 	req, _ := http.NewRequestWithContext(ctx, http.MethodPost, url, &buf)
 	req.Header.Set("Authorization", "Bearer "+cfg.OWUIToken)
