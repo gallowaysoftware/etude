@@ -12,6 +12,7 @@ import (
 
 	"github.com/gallowaysoftware/textbook-to-audiobook/internal/mathextract"
 	"github.com/gallowaysoftware/textbook-to-audiobook/mathgen"
+	"github.com/gallowaysoftware/vibe/vamp"
 )
 
 // mathCmd is the umbrella for the "math textbook" family. A catalog of
@@ -252,6 +253,8 @@ func mathExtractCmd() *cobra.Command {
 		extraFile   string
 		outFile     string
 		module      string
+		profile     string
+		noActivate  bool
 		llmURL      string
 		llmModel    string
 		keepInvalid bool
@@ -268,7 +271,13 @@ encoded formula reproduces their source example. Wrong formulas are
 dropped, not shipped — "auto-extract everything computable, gated by a
 correctness check."
 
-Requires the LLM proxy running (vibe start <long_form profile>, :9000).
+By default extract stands up the text model itself via vibe: it ensures the
+--profile profile is active (vamp.EnsureProfile, the same path 'activate'
+uses) and drives the resolved endpoint — no manual 'vibe start' needed. Pass
+--no-activate to skip that and use --llm-url/--llm-model against an
+already-running model. Note: vibe has one active LLM slot, so activating swaps
+out whatever model was loaded.
+
 Review the emitted catalog before using it; extraction is a starting
 point, not gospel.
 `,
@@ -276,6 +285,15 @@ point, not gospel.
 			ctx := cmd.Context()
 			if ctx == nil {
 				ctx = context.Background()
+			}
+			if !noActivate {
+				fmt.Fprintf(os.Stderr, "ensuring vibe profile %q is up…\n", profile)
+				ep, err := vamp.EnsureProfile(ctx, profile)
+				if err != nil {
+					return fmt.Errorf("stand up profile %q: %w (or pass --no-activate to use --llm-url/--llm-model)", profile, err)
+				}
+				llmURL, llmModel = ep.BaseURL, ep.Model
+				fmt.Fprintf(os.Stderr, "model ready: %s @ %s\n", llmModel, llmURL)
 			}
 			return mathextract.Run(ctx, mathextract.Config{
 				LessonsFile: lessonsFile,
@@ -293,8 +311,10 @@ point, not gospel.
 	cmd.Flags().StringVar(&extraFile, "equations-ref", "", "Optional extra markdown of source equations to mine (e.g. an equation_reference.md).")
 	cmd.Flags().StringVar(&outFile, "out", "", "Output catalog YAML path (required).")
 	cmd.Flags().StringVar(&module, "module", "", "Module identifier to tag entries with (e.g. 'module_1').")
-	cmd.Flags().StringVar(&llmURL, "llm-url", "http://127.0.0.1:9000", "LLM proxy base URL (vibe proxy).")
-	cmd.Flags().StringVar(&llmModel, "llm-model", "qwen3.6-27b-mtp-q6_k", "LLM model alias.")
+	cmd.Flags().StringVar(&profile, "profile", "long_form", "vibe profile to stand up for extraction (ignored with --no-activate).")
+	cmd.Flags().BoolVar(&noActivate, "no-activate", false, "Don't touch vibe; use --llm-url/--llm-model against an already-running model.")
+	cmd.Flags().StringVar(&llmURL, "llm-url", "http://127.0.0.1:9000", "LLM proxy base URL (used with --no-activate, or as an override).")
+	cmd.Flags().StringVar(&llmModel, "llm-model", "qwen3.6-27b-mtp-q6_k", "LLM model alias (used with --no-activate, or as an override).")
 	cmd.Flags().BoolVar(&keepInvalid, "keep-invalid", false, "Also write entries that failed validation (into <out>.rejected.yaml) for manual repair.")
 	_ = cmd.MarkFlagRequired("lessons")
 	_ = cmd.MarkFlagRequired("out")
