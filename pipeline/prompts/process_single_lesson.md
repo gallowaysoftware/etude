@@ -76,12 +76,19 @@ markdown code fences. No commentary.
              works. Not a one-liner. 5-10 entries max."
   },
   "common_mistakes": [
-    "What students typically get wrong on this concept and why the
-     correct answer is what it is. 3-6 entries max."
+    "A misconception the lesson ITSELF warns about or corrects, with
+     why the correct answer is what it is. Only include errors the
+     lesson actually flags — do NOT invent what students 'typically'
+     get wrong. 0-6 entries; an empty array is correct when the
+     lesson flags none."
   ],
   "exam_focus": [
-    "Specific things an examiner would test on for this lesson.
-     3-6 entries max."
+    "The recall points the curriculum's OWN self-assessment questions
+     (SAQs) test for this lesson — derived only from SAQ question text
+     and model answers present in the lesson. For an SAQ lesson, list
+     what its questions actually ask. For a non-SAQ lesson, leave this
+     an empty array. NEVER invent what 'an examiner would test' — the
+     SAQs are the only assessment signal that exists. 0-6 entries."
   ],
   "related_images": [
     "Brief one-sentence description of each diagram, what it shows,

@@ -89,10 +89,25 @@ each move.
    ranges. If the search results don't help on this sub-topic, walk
    through a numerical worked example instead — pick plausible
    values, do the arithmetic out loud, end with the answer.
-4. **Tie back to the assessment** (~50-100 words). One or two
-   sentences on what an examiner specifically asks about here, or the
-   common mistake students make on this exact sub-topic. The student
-   listening should walk away knowing what to revise.
+4. **Reinforce the recall point** (~50-100 words). Land the one thing
+   the student must retain from this sub-topic — the load-bearing
+   number, the definition, the step order, the cause-and-effect.
+
+   IMPORTANT — do not fabricate exam knowledge. You do NOT know what
+   any examiner asks, and you must NEVER say "the examiner will test
+   you on", "a common exam trap is", "for the exam, remember", or any
+   variant. You have no basis for those claims and they mislead the
+   student.
+
+   The ONLY authentic assessment signal you have is the curriculum's
+   own self-assessment questions (SAQs), which appear in the processed
+   lessons (the SAQ lessons carry the question text and a model
+   answer). When — and only when — a SAQ in THIS pass's lessons
+   actually covers the sub-topic you just taught, you may anchor the
+   recall point to it, phrased honestly: "the self-assessment
+   questions for this lesson ask you to..." If no SAQ covers it, just
+   state the recall point plainly. When in doubt, teach the point;
+   never invent who tests what.
 
 # Voice and style
 
@@ -173,7 +188,10 @@ Before you finish, mentally tally:
    target from the table above?
 2. Each segment ≥ 500 words?
 3. Each segment hits all four moves (frame → mechanism →
-   example → assessment pointer)?
+   example → recall point)?
+4. Zero invented exam claims ("the examiner will test...", "common
+   exam trap...", "for the exam, remember...")? If you wrote any,
+   delete them — they are hallucinations.
 
 If any of those fail, KEEP WRITING. Don't shortchange the lecture.
 

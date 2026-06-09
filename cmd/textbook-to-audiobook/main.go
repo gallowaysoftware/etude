@@ -85,6 +85,10 @@ running daemon and the right capabilities mapped. Run the
 	// a single binary for both flows.
 	root.AddCommand(ragCmd())
 
+	// `math` turns a computable-equation catalog into a math reference +
+	// practice guide and a fresh-numbers drill (code-computed answers).
+	root.AddCommand(mathCmd())
+
 	// vamp.BuildRoot leaves SilenceErrors false, so Cobra prints the
 	// error from Execute AND the block below prints it again. Silence
 	// Cobra's copy and keep the prefixed reporter here as the single

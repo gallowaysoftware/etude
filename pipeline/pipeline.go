@@ -7,6 +7,31 @@ import (
 	"github.com/gallowaysoftware/vibe/vamp"
 )
 
+// assembleStudyGuideTmpl stitches the per-lesson study-guide sections
+// (study_guide_sections/<lesson>.md, written by study_guide_lesson)
+// into one markdown document, in the order list_lessons enumerated
+// them (the curriculum's own order), and appends each lesson's
+// original figures referenced by absolute source path. enumerateImagePairs
+// is called per-lesson with a one-element JSON array so figures group
+// under their lesson; a lesson with no images/ dir yields "null", which
+// parseJSON turns into a nil value the {{ if }} skips.
+//
+// SVGs are skipped: the CIBD scraper emits every diagram as BOTH a .png
+// and an identically-named .svg, so listing both would double every
+// figure. Every .svg has a .png sibling, so skipping .svg loses nothing
+// and dodges the patchy SVG support in EPUB readers.
+const assembleStudyGuideTmpl = `# {{ .inputs.module_topic }} — Study Guide
+
+This study guide teaches every lesson in this module, in curriculum order. Each section leads with the core idea, preserves every equation and number from the source, and attaches the original figures. Use it alongside the audio lectures during revision.
+{{ $root := .inputs.lesson_root }}{{ $runDir := .runDir }}{{ range $lesson := (parseJSON .stages.list_lessons.output) }}
+{{ readFile (joinPath $runDir "study_guide_sections" (printf "%s.md" $lesson)) }}
+{{ $imgs := parseJSON (enumerateImagePairs $root (printf "[%q]" $lesson)) }}{{ if $imgs }}
+### Figures
+{{ range $img := $imgs }}{{ if not (hasSuffix (lower $img.image) ".svg") }}
+![{{ $img.image }}]({{ $img.image_path }})
+{{ end }}{{ end }}{{ end }}{{ end }}
+`
+
 // Build constructs the textbook-to-audiobook pipeline from a Config.
 // The DAG was lifted from a production module.yaml pipeline, with
 // Config-tunable knobs (subject voice, cover art prompt,
@@ -52,7 +77,7 @@ func Build(cfg Config) (*vamp.Pipeline, error) {
 	p.Input("expert_persona", vamp.WithDefault(cfg.ExpertPersona),
 		vamp.Describe("First-person identity the lecturer prompts adopt."))
 	p.Input("assessment_label", vamp.WithDefault(cfg.AssessmentLabel),
-		vamp.Describe("How learners are evaluated (drives the 'exam pointer' callouts)."))
+		vamp.Describe("How learners are evaluated; named in prompts as what the student is preparing for. Assessment callouts are grounded in the curriculum's own SAQs, never fabricated."))
 	p.Input("cover_prompt", vamp.WithDefault(cfg.CoverPrompt),
 		vamp.Describe("SDXL prompt for the module cover."))
 	p.Input("epub_title", vamp.WithDefault(cfg.EPUBTitleTemplate),
@@ -171,7 +196,7 @@ func Build(cfg Config) (*vamp.Pipeline, error) {
 		After(mergeLessons).
 		Source(`{{ .stages.merge_lessons.output }}`).
 		TargetChars(100000).
-		Preserve("the lesson title, every numerical value, every named entity (enzyme/process/equipment), every cause-and-effect relationship, and every SAQ question + model answer").
+		Preserve("the lesson title, every numerical value, every equation/formula verbatim with its variable definitions, every named entity (enzyme/process/equipment), every cause-and-effect relationship, and every self-assessment (SAQ) question + its model answer in full (these are the only authentic assessment signal — never drop or paraphrase them)").
 		Output("compact_lessons.txt")
 
 	// Identify thematic units in this module + judge per-unit duration.
@@ -258,14 +283,41 @@ func Build(cfg Config) (*vamp.Pipeline, error) {
 			RetryOn:        []string{"transient", "invalid_output"},
 		})
 
-	// Module-wide written companion (markdown).
-	studyGuide := p.Text("study_guide").
+	// Written companion (markdown), built per-lesson then assembled.
+	// Per-lesson generation (vs one whole-corpus pass over the lossy
+	// compact_lessons summary) is what fixes "wordy yet incomplete /
+	// out of order / misses what's important": each lesson is taught in
+	// full off its own processed notes + verbatim source, nothing is
+	// dropped to fit one context window, and the assembly order is the
+	// curriculum's own. The verbatim source feed also lets the writer
+	// reproduce equations and SAQ question/answer text exactly.
+	studyGuideLesson := p.Text("study_guide_lesson").
 		Capability("long_form").
-		After(compactLessons, compactSearch).
-		PromptFS(promptsFS, "study_guide.md").
-		Output(cfg.StudyGuideFilenameTemplate).
+		After(listLessons, processLesson, compactSearch).
+		Foreach(listLessons, "lesson").
+		PromptFS(promptsFS, "study_guide_lesson.md").
+		Output("study_guide_sections/{{.lesson}}.md").
 		Param("temperature", 0.4).
-		Param("max_tokens", 32768)
+		Param("max_tokens", 32768).
+		Retry(&vamp.RetryPolicy{
+			MaxAttempts:    3,
+			InitialBackoff: 10 * time.Second,
+			MaxBackoff:     60 * time.Second,
+			RetryOn:        []string{"transient", "invalid_output"},
+		})
+
+	// Assemble the per-lesson sections in curriculum order and attach
+	// the ORIGINAL figures from each lesson (item: "keep the images
+	// from the original material"). Figures are referenced by absolute
+	// source path; a host pandoc embeds them into the EPUB. (The pandoc
+	// docker fallback only mounts the run dir, so under that fallback
+	// the EPUB ships without the out-of-tree images — the markdown guide
+	// still references them. Install pandoc on the host for embedded
+	// figures.) Equations are preserved inline by study_guide_lesson.
+	studyGuide := p.Render("study_guide").
+		After(studyGuideLesson, listLessons).
+		Prompt(assembleStudyGuideTmpl).
+		Output(cfg.StudyGuideFilenameTemplate)
 
 	// Fidelity audit (report-only): ground the study guide against the SOURCE
 	// curriculum and flag any claim the source doesn't support — fabricated
