@@ -1,0 +1,31 @@
+name: Feature request
+description: Propose something etude should do
+title: "[feature]: "
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Check the [non-goals](https://github.com/gallowaysoftware/etude/blob/main/SUPPORT.md#non-goals)
+        first — a request that lands there will be closed kindly but quickly.
+        Also check [PLAN.md](https://github.com/gallowaysoftware/etude/blob/main/PLAN.md):
+        your idea may already be scheduled in a phase.
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem it solves
+      description: What are you trying to do that etude makes hard today? Concrete scenarios beat abstract features.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: The proposal
+      description: What should etude do? If it touches a contract (course.yaml, the lesson format, the question bank, the study store), say how existing courses migrate.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: What else would solve the problem, and why is this better?

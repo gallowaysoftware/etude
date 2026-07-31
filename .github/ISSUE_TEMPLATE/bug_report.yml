@@ -1,0 +1,45 @@
+name: Bug report
+description: Something etude does that it shouldn't, or doesn't do that it should
+title: "[bug]: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report this. One request up front:
+        **reports without the requested environment output almost always
+        bounce back with a request for it**, so pasting it now is the fast path.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you ran, what you expected, what happened instead. Quote the exact command.
+    validations:
+      required: true
+  - type: textarea
+    id: doctor
+    attributes:
+      label: etude doctor output
+      description: Paste the full output of `etude doctor`. If the bug is in the drill/serve/eval legs (which don't need the vibe stack), say so and paste `etude version` / your install method instead.
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: versions
+    attributes:
+      label: Versions
+      description: etude version or commit, go version (if built from source), OS/arch, vibe version (if the bug involves the pipeline).
+      placeholder: "etude v0.3.0, go1.26.5, macOS arm64"
+    validations:
+      required: true
+  - type: textarea
+    id: course
+    attributes:
+      label: Course material
+      description: If the bug involves a specific course, attach a minimal course directory that reproduces it (or a synthetic equivalent). Never attach material you don't have rights to share.
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant log output
+      description: stderr output, stack traces, or the failing stage's log excerpt.
+      render: shell
