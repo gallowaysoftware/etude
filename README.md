@@ -43,6 +43,33 @@ Run time: ~5 hours on a single RTX 5090 for a 60-lesson module. Deliverables lan
 
 Versioning note: `v0.1.0` and `v0.2.0` predate the rename and declare the old module path (`github.com/gallowaysoftware/textbook-to-audiobook`) — the Go module mirror and checksum database are immutable, so those two tags resolve only under that path. `v0.3.0` onward is the installable line under `github.com/gallowaysoftware/etude`.
 
+## The drill coach
+
+Point etude at a course whose material carries its own questions *with model answers* and you get an honest drill: questions relayed verbatim from the corpus, answer **and confidence** collected before any reveal, grading only against the official key (decomposed into rubric points at extraction), misses requeued at 7/20/40 minutes within the session, mastery re-verified across days at 1/2/4-day intervals, and confident-but-wrong answers — blindspots — drilled hardest. It never invents a question and never grades from the model's own opinion.
+
+```bash
+# the demo course is the five-minute tour — original material, ships with the repo
+export ETUDE_LLM_URL=http://localhost:8080/v1   # any OpenAI-compatible endpoint
+export ETUDE_LLM_MODEL=<your-model>
+
+etude drill --course examples/demo-course    # the terminal drill loop
+etude report --course examples/demo-course   # coverage, mastery, blindspots
+
+# same coach, agent frontends
+etude serve --course examples/demo-course              # MCP over stdio (study_* tools)
+etude drill api next --course examples/demo-course     # one JSON object per call
+etude skill --course examples/demo-course              # skill file for agent harnesses
+```
+
+Grading judgement is the one place a model decides a fact about you, so qualify yours before trusting it with weeks of study:
+
+```bash
+etude eval grading --course examples/demo-course \
+  --golden examples/demo-course/eval/grading-golden.jsonl
+```
+
+The text legs (drill, grading, eval) need only an OpenAI-compatible endpoint — a local router or an external key; no vibe daemon. Audio, vision, and covers remain local-stack. Learner state is greppable JSON at `<course>/.etude/study.json`, single-writer locked. How a corpus marks its own questions is declared in `course.yaml` (`assessment_markers`; see [docs/course-format.md](docs/course-format.md#assessment-material)).
+
 ## RAG export
 
 After a textbook run lands, the `rag` family of subcommands produces a portable retrieval-augmented dataset — chunked + embedded content + study aids — loadable in AnythingLLM, LangChain, LlamaIndex, or Open WebUI.
