@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="420" viewBox="0 0 720 420" font-family="Helvetica, Arial, sans-serif">
+  <rect width="720" height="420" fill="#ffffff"/>
+  <text x="360" y="36" text-anchor="middle" font-size="20" fill="#1a1a2e">GGUF file layout</text>
+
+  <rect x="120" y="60" width="480" height="90" rx="6" fill="#dbeafe" stroke="#1e40af" stroke-width="2"/>
+  <text x="360" y="92" text-anchor="middle" font-size="16" font-weight="bold" fill="#1e3a8a">Metadata header</text>
+  <text x="360" y="116" text-anchor="middle" font-size="13" fill="#1e3a8a">architecture, layer and head counts, context length, tokenizer</text>
+  <text x="360" y="134" text-anchor="middle" font-size="13" fill="#1e3a8a">key-value pairs at the start of the file</text>
+
+  <rect x="120" y="170" width="480" height="90" rx="6" fill="#dcfce7" stroke="#166534" stroke-width="2"/>
+  <text x="360" y="202" text-anchor="middle" font-size="16" font-weight="bold" fill="#14532d">Tensor index</text>
+  <text x="360" y="226" text-anchor="middle" font-size="13" fill="#14532d">one entry per tensor: name, shape, numeric type, byte offset</text>
+  <text x="360" y="244" text-anchor="middle" font-size="13" fill="#14532d">small — read fully at load time</text>
+
+  <rect x="120" y="280" width="480" height="110" rx="6" fill="#fee2e2" stroke="#991b1b" stroke-width="2"/>
+  <text x="360" y="312" text-anchor="middle" font-size="16" font-weight="bold" fill="#7f1d1d">Tensor data</text>
+  <text x="360" y="336" text-anchor="middle" font-size="13" fill="#7f1d1d">the weights themselves, block-aligned for memory mapping</text>
+  <text x="360" y="354" text-anchor="middle" font-size="13" fill="#7f1d1d">nearly all of the file's bytes</text>
+  <text x="360" y="372" text-anchor="middle" font-size="13" fill="#7f1d1d">paged in from disk on demand when mmap'd</text>
+
+  <text x="60" y="110" text-anchor="middle" font-size="12" fill="#6b7280" transform="rotate(-90 60 225)">file offset increases</text>
+</svg>

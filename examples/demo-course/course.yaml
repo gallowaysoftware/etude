@@ -1,0 +1,22 @@
+version: 1
+
+slug: home-llms
+title: Running LLMs at Home
+
+subject: running language models on your own hardware
+program: the Running LLMs at Home course
+persona: an engineer who runs models locally
+assessment: end-of-module self-check questions
+
+source: .
+modules:
+  - num: 1
+    topic: how models fit in memory
+  - num: 2
+    topic: quantization and what it costs you
+
+render:
+  voice: af_bella
+
+assessment_markers:
+  preset: saq
