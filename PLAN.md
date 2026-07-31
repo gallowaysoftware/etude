@@ -189,32 +189,33 @@ Exit met: `etude init` scaffolds a course a stranger could fill in, and
 Extract the drill from its private home into this repo, beside the
 question-generation and Anki machinery that already lives here.
 
-- [ ] `internal/qbank`: assessment-material extractor with
+- [x] `internal/qbank`: assessment-material extractor with
       configurable markers (heading patterns, difficulty conventions,
       figure refs) — the current curriculum-specific parsing becomes
       the first marker preset; synthetic fixtures in public CI.
-- [ ] `internal/study`: the successive-relearning store, semantics
+- [x] `internal/study`: the successive-relearning store, semantics
       preserved verbatim (graduate after 2 confident-correct, 7/20/40
       min requeue, 1/2/4-day re-verify, un-master on miss, blindspot
       priority, diagnostic sweep first); stable-ID migration on
       re-extract.
-- [ ] `drill` — terminal REPL over the store (answer + confidence
+- [x] `drill` — terminal REPL over the store (answer + confidence
       before reveal, point-by-point grading, citations).
-- [ ] `serve` — MCP: study_next_item / study_record_result /
+- [x] `serve` — MCP: study_next_item / study_record_result /
       study_report / study_gaps / study_coverage + the coach system
       prompt; `skill` — the CLI-driving agent-harness file (one agent,
       three frontends: REPL, chat client, agent skill).
-- [ ] `eval grading` — golden answer/grade pairs + harness; documented
+- [x] `eval grading` — golden answer/grade pairs + harness; documented
       minimum-grader guidance.
-- [ ] Endpoint config: everything text takes `--llm-url`/course.yaml
-      endpoints — local router or any OpenAI-compatible provider.
-- [ ] Demo course: author a small original course (~12 short lessons)
-      with its own SAQ-style question bank and model answers — the
-      guaranteed, redistributable extract-path happy path; doubles as
-      documentation. Plus fetch-nothing prebuilt artifacts on a
-      release: sample M4B chapters, EPUB, .apkg, a drill asciinema.
-- [ ] Maintainer kit: issue templates demanding `doctor` output,
-      SUPPORT.md, published non-goals, Discussions on, weekly triage.
+- [x] Endpoint config: everything text takes `--llm-url`/`ETUDE_LLM_*`
+      — local router or any OpenAI-compatible provider.
+- [x] Demo course: authored (`examples/demo-course/`, slug home-llms)
+      with its own SAQ bank, model answers, figures, math lesson, and a
+      23-pair golden grading set. Still open: fetch-nothing prebuilt
+      artifacts on a release (sample M4B chapters, EPUB, .apkg, a drill
+      asciinema).
+- [x] Maintainer kit: issue templates demanding `doctor` output,
+      SUPPORT.md with published non-goals, Discussions on. Weekly
+      triage is process, not code.
 
 Exit: 2–3 recruited strangers reach a graded drill answer within ten
 minutes of the README, from a local endpoint or an external key,
