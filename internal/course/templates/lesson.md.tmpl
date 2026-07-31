@@ -1,0 +1,44 @@
+# Example Lesson
+
+Replace this file with real material. It exists to show the shape a
+lesson takes; delete the directory once you have your own.
+
+A lesson is one self-contained piece of teaching — roughly what a
+lecturer would cover in one sitting. The pipeline reads the whole file
+and writes lecture prose, study-guide sections, and retrieval chunks
+from it, so the structure below is a guide rather than a schema: use
+ordinary markdown headings and prose.
+
+## What a lesson should contain
+
+Explain the mechanism, not just the conclusion. Downstream prompts are
+told never to invent facts, so anything the lecture should say has to be
+here first.
+
+Numbers, definitions, and processes are worth stating plainly — they are
+extracted into the study guide, the glossary, and the flashcard deck.
+
+## Figures
+
+Put images in an `images/` subdirectory beside this file. PNG, JPEG,
+GIF, WebP, BMP, and SVG are read; anything else is ignored. A vision
+model describes each figure once and folds the description into the
+prose, so a diagram with no caption still reaches the audio.
+
+SVGs work but need `rsvg-convert` installed, and the EPUB omits them —
+ship a raster copy alongside if the figure matters.
+
+## Equations
+
+Write equations in fenced code blocks so they survive verbatim:
+
+```
+extract yield = (litres of alcohol) / (tonnes of grain)
+```
+
+## If your material is not already in lessons
+
+Most material is not. A book, a PDF export, or a pile of documents has
+chapters or files, not lessons — and a good lesson breakdown is its own
+piece of work. Use `etude ingest` to propose one from unstructured
+source material and review the proposal before it becomes a course.

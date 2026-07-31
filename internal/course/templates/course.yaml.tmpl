@@ -1,0 +1,77 @@
+# course.yaml — what this course IS.
+#
+# This file carries the course's identity and the labels that skin every
+# prompt. It does NOT say where models run: endpoints, API keys, and
+# hardware profiles are machine-scoped and live in vibe/vamp config or
+# ETUDE_* environment variables, so the same course travels between a
+# laptop, a GPU box, and an external provider unchanged.
+#
+# Every {{ .Placeholder }} value below must be replaced — the tooling
+# refuses to load a manifest that still carries one.
+#
+# Validate as you go:  etude course validate
+
+version: 1
+
+# Identity. The slug names this course everywhere it appears: the
+# learner-memory expert, the knowledge collection, deliverable
+# filenames. Lowercase letters, digits, and hyphens.
+slug: {{ .Slug }}
+title: {{ .Title }}
+
+# The four labels that skin every prompt. These carry the whole domain
+# identity of the course — the pipeline itself knows nothing about your
+# subject.
+#
+#   subject     the field of study, as a lecturer would name it
+#   program     the course/certification this material belongs to
+#   persona     the first-person identity the lecturer adopts
+#   assessment  how learners are evaluated (drives "exam pointer" language)
+subject: {{ .Placeholder }}with the field of study, e.g. "introductory astronomy"
+program: {{ .Placeholder }}with the course name, e.g. "an introductory astronomy course"
+persona: {{ .Placeholder }}with the lecturer identity, e.g. "an astronomy lecturer"
+assessment: {{ .Placeholder }}with the evaluation, e.g. "end-of-unit self-check questions"
+
+# Where the material lives, relative to this file. The source directory
+# holds one subdirectory per module.
+source: .
+
+# Modules in teaching order. Order is explicit because directory sort
+# puts Module_10 before Module_2, and a course is not a set.
+modules:
+{{- range .Modules }}
+  - num: {{ . }}
+    topic: {{ $.Placeholder }}with a short summary of module {{ . }}
+    # dir: Module_{{ . }}    # defaults to Module_<num>
+{{- end }}
+
+# Presentation. Every field is optional; sensible defaults apply.
+render:
+  voice: af_bella           # Kokoro voice for the narration
+  # cover_prompt: ...       # SDXL prompt for the cover art
+  # search_suffix: ...      # appended to web-search queries for enrichment
+  # epub_title: ...
+  # epub_author: ...
+  # filename_prefix: ...    # deliverable basename stem; defaults from the topic
+
+# How this corpus marks its own questions and model answers, if it
+# carries any. Material that ships genuine assessment questions is the
+# privileged input: the drill relays those verbatim and grades against
+# the official answer, never inventing either. Corpora without them get
+# generated questions instead, which pass through human review before
+# entering the bank.
+#
+# Presets: none, saq
+assessment_markers:
+  preset: {{ .Preset }}
+  # lesson_pattern: "*SAQ*"                   # which lessons hold questions
+  # question_heading: "## Self-Assessment Questions"
+  # answer_heading: "## Suggested Response - Q{n}"
+  # difficulty_marker: escaped-asterisks
+
+# Bindings to the services that make this course conversational. Both
+# default to the course slug; set them only when an existing deployment
+# already uses different names.
+expert:
+  # memory_slug: {{ .Slug }}
+  # knowledge_collection: {{ .Slug }}
