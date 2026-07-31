@@ -20,7 +20,6 @@ import (
 
 	"github.com/gallowaysoftware/vibe/vamp"
 
-	"github.com/gallowaysoftware/etude/internal/course"
 	"github.com/gallowaysoftware/etude/pipeline"
 )
 
@@ -30,12 +29,6 @@ import (
 // --topic, --module-num, etc. flow into pipeline inputs without
 // requiring an explicit --input key=value invocation.
 var cfg pipeline.Config
-
-// coursePath is the optional course.yaml (or its directory) that
-// supplies cfg's domain labels and the module's lesson root, so a build
-// names its material once in the manifest instead of on every
-// invocation.
-var coursePath string
 
 func main() {
 	root, err := vamp.BuildRoot(func() (*vamp.Pipeline, error) {
@@ -85,12 +78,6 @@ running daemon and the right capabilities mapped. Run the
 	// bound cfg fields lets us name the actual CLI flag (--source,
 	// --topic) the user must supply instead.
 	bindRunRequiredCheck(root)
-
-	// `init` and `course` own the manifest: scaffolding a course and
-	// checking it before a multi-hour build spends GPU time on material
-	// the pipeline would silently drop.
-	root.AddCommand(initCmd())
-	root.AddCommand(courseCmd())
 
 	// `rag` is a strict downstream of the textbook pipeline — it
 	// consumes processed_lessons.json and produces the RAG export.
@@ -145,10 +132,8 @@ func bindRunFlags(root *cobra.Command) error {
 		return err
 	}
 	f := run.Flags()
-	f.StringVar(&coursePath, "course", "",
-		"Course directory or course.yaml; supplies --source and the domain labels for --module-num.")
 	f.StringVar(&cfg.LessonRoot, "source", "",
-		"Directory containing Lesson_*/ subdirectories (required unless --course is given).")
+		"Directory containing Lesson_*/ subdirectories (required).")
 	f.IntVar(&cfg.ModuleNum, "module-num", 1,
 		"Numeric module identifier; used in cover seeds + output filenames.")
 	f.StringVar(&cfg.ModuleTopic, "topic", "",
@@ -182,25 +167,12 @@ func bindRunRequiredCheck(root *cobra.Command) {
 		return
 	}
 	run.PreRunE = func(cmd *cobra.Command, args []string) error {
-		if coursePath != "" {
-			m, err := course.Load(coursePath)
-			if err != nil {
-				return err
-			}
-			mod, ok := m.FindModule(cfg.ModuleNum)
-			if !ok {
-				return fmt.Errorf("course %s has no module %d (use --module-num)", m.Slug, cfg.ModuleNum)
-			}
-			if err := applyCourse(m, mod); err != nil {
-				return err
-			}
-		}
 		var missing []string
 		if cfg.LessonRoot == "" {
-			missing = append(missing, "--source (or --course)")
+			missing = append(missing, "--source")
 		}
 		if cfg.ModuleTopic == "" {
-			missing = append(missing, "--topic (or --course)")
+			missing = append(missing, "--topic")
 		}
 		if len(missing) > 0 {
 			return fmt.Errorf("required flag(s) %v not set", missing)

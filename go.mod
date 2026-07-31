@@ -1,6 +1,6 @@
 module github.com/gallowaysoftware/etude
 
-go 1.26.3
+go 1.26.5
 
 require (
 	github.com/gallowaysoftware/vibe v0.8.0
