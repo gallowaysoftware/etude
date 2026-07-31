@@ -1,4 +1,4 @@
-// Package rag turns a textbook-to-audiobook pipeline run's
+// Package rag turns a etude pipeline run's
 // processed_lessons.json into a portable retrieval-augmented-generation
 // dataset: chunked + embedded content, plus study aids (flashcards,
 // glossary, key-numbers reference, equation cheat sheet).

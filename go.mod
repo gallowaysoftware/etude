@@ -1,4 +1,4 @@
-module github.com/gallowaysoftware/textbook-to-audiobook
+module github.com/gallowaysoftware/etude
 
 go 1.26.3
 

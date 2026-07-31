@@ -30,7 +30,7 @@ var ankiHelperPy []byte
 // the chromadb Pack helper.
 //
 // The helper requires the `genanki` package on the host. Install
-// path (matches chroma): ~/.local/state/textbook-to-audiobook/rag-venv
+// path (matches chroma): ~/.local/state/etude/rag-venv
 // pre-populated with `genanki`.
 func PackAnki(ctx context.Context, cfg AnkiConfig) error {
 	if cfg.FlashcardsFile == "" {
@@ -59,10 +59,10 @@ func PackAnki(ctx context.Context, cfg AnkiConfig) error {
 	tmpf.Close()
 
 	python := "python3"
-	if env := os.Getenv("TEXTBOOK_RAG_PYTHON"); env != "" {
+	if env := os.Getenv("ETUDE_RAG_PYTHON"); env != "" {
 		python = env
 	} else if home, err := os.UserHomeDir(); err == nil {
-		candidate := filepath.Join(home, ".local", "state", "textbook-to-audiobook", "rag-venv", "bin", "python3")
+		candidate := filepath.Join(home, ".local", "state", "etude", "rag-venv", "bin", "python3")
 		if _, err := os.Stat(candidate); err == nil {
 			python = candidate
 		}

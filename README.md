@@ -1,4 +1,8 @@
-# textbook-to-audiobook
+# etude
+
+Formerly **textbook-to-audiobook**. The audiobook pipeline below is
+becoming one renderer of a larger course compiler — see [PLAN.md](PLAN.md)
+for the product plan.
 
 Turn a directory of structured lessons (markdown + diagrams) into:
 
@@ -17,17 +21,17 @@ go install github.com/gallowaysoftware/vibe/cmd/vibe@latest
 vibe daemon &
 
 # 2. install this binary
-go install github.com/gallowaysoftware/textbook-to-audiobook/cmd/textbook-to-audiobook@latest
+go install github.com/gallowaysoftware/etude/cmd/etude@latest
 
 # 3. see what the host needs
-textbook-to-audiobook requirements
+etude requirements
 
 # 4. check what's missing (read-only), then bring everything up
-textbook-to-audiobook doctor      # reports each declared service: ✓ or ✗
-textbook-to-audiobook activate    # `vibe start`s every required profile
+etude doctor      # reports each declared service: ✓ or ✗
+etude activate    # `vibe start`s every required profile
 
 # 5. run
-textbook-to-audiobook run \
+etude run \
   --source ./my-course/Module_1 \
   --module-num 1 \
   --topic "introductory thermodynamics"
@@ -35,7 +39,7 @@ textbook-to-audiobook run \
 
 `activate` reads the pipeline's RequireProfile + RequireService declarations and brings up everything via vibe in one go — same as running `vibe start <each-profile>` by hand, but the pipeline tells vibe what it needs. `--skip-active` brings up only the CPU sidecars when the GPU is busy elsewhere.
 
-Run time: ~5 hours on a single RTX 5090 for a 60-lesson module. Deliverables land in `$XDG_STATE_HOME/vamp/runs/textbook-to-audiobook_<timestamp>/`.
+Run time: ~5 hours on a single RTX 5090 for a 60-lesson module. Deliverables land in `$XDG_STATE_HOME/vamp/runs/etude_<timestamp>/`.
 
 ## RAG export
 
@@ -46,13 +50,13 @@ After a textbook run lands, the `rag` family of subcommands produces a portable 
 vibe start embed_bge_large    # bge-large-en-v1.5-q8 on :14004
 
 # Chunk + enrich + embed.
-textbook-to-audiobook rag run \
+etude rag run \
   --lessons <run-dir>/processed_lessons.json \
   --out <run-dir>/rag \
   --module module_1
 
 # Build a ChromaDB persistent directory.
-textbook-to-audiobook rag pack \
+etude rag pack \
   --chunks <run-dir>/rag/chunks.jsonl \
   --out <run-dir>/rag \
   --collection module_1
@@ -60,7 +64,7 @@ textbook-to-audiobook rag pack \
 
 `rag run` outputs `chunks.jsonl` (source of truth, embeddings + LLM enrichment), `flashcards.tsv` (Anki), `study_qa.md`, `glossary.md`, `key_numbers.md`, `equations.md`, and `manifest.json`. `rag pack` then derives the loadable `chroma_db/` directory from `chunks.jsonl`.
 
-`rag pack` and `rag anki` shell out to Python helpers — `rag pack` needs the `chromadb` package, `rag anki` needs `genanki`. Both prefer a venv at `~/.local/state/textbook-to-audiobook/rag-venv` if present (set `TEXTBOOK_RAG_PYTHON` to point elsewhere); otherwise `python3` on `$PATH` must have the package installed. The study-aid prompts frame themselves around `--program`, so pass it (e.g. `--program "an introductory astronomy course"`) for material-appropriate questions; it defaults to generic exam-prep language.
+`rag pack` and `rag anki` shell out to Python helpers — `rag pack` needs the `chromadb` package, `rag anki` needs `genanki`. Both prefer a venv at `~/.local/state/etude/rag-venv` if present (set `ETUDE_RAG_PYTHON` to point elsewhere); otherwise `python3` on `$PATH` must have the package installed. The study-aid prompts frame themselves around `--program`, so pass it (e.g. `--program "an introductory astronomy course"`) for material-appropriate questions; it defaults to generic exam-prep language.
 
 ## What's the difference from a generic vamp YAML pipeline
 
@@ -112,7 +116,7 @@ Each `lesson.md` is what the model reads. `images/` is optional; SVGs and raster
 
 ## Runtime requirements
 
-Run `textbook-to-audiobook requirements` to see the live list. As of this writing:
+Run `etude requirements` to see the live list. As of this writing:
 
 - **Capabilities**: `long_form` (27B+ text model, 128k+ context), `vision` (27B+ multimodal), `tts`, `image_gen`.
 - **Services**: `searxng` on `:14002`, `kokoro-fastapi` on `:8880` (activated as the `tts_kokoro` vibe profile).
@@ -144,7 +148,7 @@ list_lessons → flatten_unique_images → describe_image (vision, foreach uniqu
                                               cover_art ─┘
 ```
 
-Run `textbook-to-audiobook viz` for the full Mermaid graph.
+Run `etude viz` for the full Mermaid graph.
 
 ## Status
 

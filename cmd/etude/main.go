@@ -1,11 +1,11 @@
-// Command textbook-to-audiobook turns a directory of structured lessons
+// Command etude turns a directory of structured lessons
 // (markdown + diagrams) into a chapterised audiobook (M4B), per-unit
 // MP3s, a markdown study guide, and an EPUB companion.
 //
 // It is a Go-DSL pipeline binary built against
 // github.com/gallowaysoftware/vibe/vamp: vibe supervises the model
 // backends (LLM, vision, TTS, image-gen) under capability profiles, and
-// vamp orchestrates the DAG. Run `textbook-to-audiobook requirements`
+// vamp orchestrates the DAG. Run `etude requirements`
 // to see what services + capabilities the host must provide.
 package main
 
@@ -20,7 +20,7 @@ import (
 
 	"github.com/gallowaysoftware/vibe/vamp"
 
-	"github.com/gallowaysoftware/textbook-to-audiobook/pipeline"
+	"github.com/gallowaysoftware/etude/pipeline"
 )
 
 // cfg is populated by Cobra flag binding on the root command before any
@@ -35,13 +35,13 @@ func main() {
 		return pipeline.Build(cfg)
 	})
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "textbook-to-audiobook:", err)
+		fmt.Fprintln(os.Stderr, "etude:", err)
 		os.Exit(1)
 	}
 
-	root.Use = "textbook-to-audiobook"
+	root.Use = "etude"
 	root.Short = "Generate an audiobook + EPUB study guide from a directory of structured lessons."
-	root.Long = `textbook-to-audiobook turns a directory of structured lessons (one
+	root.Long = `etude turns a directory of structured lessons (one
 subdirectory per lesson, each containing a lesson.md and optional
 images/) into a chapterised audiobook (M4B), per-unit MP3s, a markdown
 study guide, and an EPUB companion.
@@ -68,7 +68,7 @@ running daemon and the right capabilities mapped. Run the
 	// command. Done before AddCommand(ragCmd) so the rag tree (which
 	// is added below and has its own flags) never inherits them.
 	if err := bindRunFlags(root); err != nil {
-		fmt.Fprintln(os.Stderr, "textbook-to-audiobook:", err)
+		fmt.Fprintln(os.Stderr, "etude:", err)
 		os.Exit(1)
 	}
 
@@ -104,7 +104,7 @@ running daemon and the right capabilities mapped. Run the
 	defer stop()
 
 	if err := root.ExecuteContext(ctx); err != nil {
-		fmt.Fprintln(os.Stderr, "textbook-to-audiobook:", err)
+		fmt.Fprintln(os.Stderr, "etude:", err)
 		os.Exit(1)
 	}
 }

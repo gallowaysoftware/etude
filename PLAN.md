@@ -1,11 +1,10 @@
-# Plan: from textbook-to-audiobook to a course compiler
+# etude — product plan
 
-This repo is becoming the product repo for a larger tool (working name:
-**etude** — an étude is a piece composed to practice a skill; final name
-pending registry checks). This document is the working plan: what the
-product is, what moves where, and in what order. It supersedes the
-roadmap implied by the current README, which describes only the
-audiobook pipeline.
+This repo (formerly `textbook-to-audiobook`) is the product repo for
+**etude** — an étude is a piece composed to practice a skill. This
+document is the working plan: what the product is, what moves where,
+and in what order. It supersedes the roadmap implied by the README,
+which describes only the audiobook pipeline.
 
 ## What the product is
 
@@ -285,7 +284,7 @@ integration points are the specs.
 ## Open decisions
 
 1. Rename this repo/module to the product name in Phase 0, or keep
-   `textbook-to-audiobook` and wrap. Renaming is cheapest now.
+   `etude` and wrap. Renaming is cheapest now.
 2. Demo course: author a small original course (with its own question
    bank) so the extract path has a guaranteed, redistributable happy
    path — verified: no surveyed public corpus ships questions *with*

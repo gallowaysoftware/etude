@@ -32,7 +32,7 @@ This study guide teaches every lesson in this module, in curriculum order. Each 
 {{ end }}{{ end }}{{ end }}{{ end }}
 `
 
-// Build constructs the textbook-to-audiobook pipeline from a Config.
+// Build constructs the etude pipeline from a Config.
 // The DAG was lifted from a production module.yaml pipeline, with
 // Config-tunable knobs (subject voice, cover art prompt,
 // EPUB metadata, output filename templates) pushed into pipeline inputs
@@ -50,7 +50,7 @@ func Build(cfg Config) (*vamp.Pipeline, error) {
 	// `validate` from working with a fresh Config (no flags
 	// supplied, no module to build yet).
 
-	p := vamp.New("textbook-to-audiobook").
+	p := vamp.New("etude").
 		Describe("Turn a directory of structured lessons (markdown + diagrams) into a chapterised audiobook (M4B), per-unit MP3s, a markdown study guide, and an EPUB companion. Curriculum-agnostic; the subject-specific surface is supplied via Config.")
 
 	// ---- Inputs ---------------------------------------------------------

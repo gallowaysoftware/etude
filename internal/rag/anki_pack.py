@@ -16,7 +16,7 @@ instead of orphaning the old one and adding a duplicate.
 
 Requires the genanki package (pip install genanki). The Go-side
 PackAnki invocation expects this script to land in a venv at
-~/.local/state/textbook-to-audiobook/rag-venv with genanki
+~/.local/state/etude/rag-venv with genanki
 installed.
 """
 

@@ -281,7 +281,7 @@ func owuiEnsureCollection(ctx context.Context, client *http.Client, cfg PushConf
 	// Create.
 	createBody, _ := json.Marshal(map[string]any{
 		"name":           cfg.Collection,
-		"description":    "Pushed by textbook-to-audiobook rag push",
+		"description":    "Pushed by etude rag push",
 		"access_control": map[string]any{},
 	})
 	createURL := cfg.OWUIURL + "/api/v1/knowledge/create"

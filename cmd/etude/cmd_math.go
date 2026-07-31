@@ -10,8 +10,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/gallowaysoftware/textbook-to-audiobook/internal/mathextract"
-	"github.com/gallowaysoftware/textbook-to-audiobook/mathgen"
+	"github.com/gallowaysoftware/etude/internal/mathextract"
+	"github.com/gallowaysoftware/etude/mathgen"
 	"github.com/gallowaysoftware/vibe/vamp"
 )
 

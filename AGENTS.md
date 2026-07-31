@@ -6,7 +6,7 @@ conventions and invariants needed to make changes that fit.
 
 ## Repo at a glance
 
-A single Go binary (`github.com/gallowaysoftware/textbook-to-audiobook`) that
+A single Go binary (`github.com/gallowaysoftware/etude`) that
 turns a directory of structured lessons into a chapterised M4B audiobook,
 per-unit MP3s, a markdown study guide, and an EPUB companion. It is a Go-DSL
 pipeline built on [vibe](https://github.com/gallowaysoftware/vibe)'s `vamp`
@@ -14,7 +14,7 @@ package: `vibe` supervises the model backends (LLM, vision, TTS, image-gen)
 under capability profiles; this binary describes the DAG and ships the prompts
 as `go:embed` assets.
 
-- `cmd/textbook-to-audiobook/` — the Cobra entrypoint. `main.go` binds
+- `cmd/etude/` — the Cobra entrypoint. `main.go` binds
   persistent flags into a `pipeline.Config`; `vamp.BuildRoot` auto-registers
   the `run` / `requirements` / `doctor` / `activate` / `viz` / `validate`
   subcommands. `cmd_rag.go` adds the downstream `rag` family.
@@ -54,8 +54,8 @@ gofmt -l .          # must print nothing
 ## Runtime
 
 The binary is the pipeline, not the inference stack — it needs a running `vibe`
-daemon with the right capability profiles. Run `textbook-to-audiobook
+daemon with the right capability profiles. Run `etude
 requirements` for the live contract and `doctor` to check the host. `rag pack`
 / `rag anki` shell out to Python (`chromadb` / `genanki`), preferring a venv at
-`~/.local/state/textbook-to-audiobook/rag-venv` (`TEXTBOOK_RAG_PYTHON` to
+`~/.local/state/etude/rag-venv` (`ETUDE_RAG_PYTHON` to
 override).

@@ -15,7 +15,7 @@ import (
 // inputs are LessonsFile + OutDir + Module.
 type Config struct {
 	// LessonsFile is the path to processed_lessons.json from a prior
-	// textbook-to-audiobook pipeline run.
+	// etude pipeline run.
 	LessonsFile string
 	// OutDir is the directory all RAG artefacts land in. Created if
 	// missing.

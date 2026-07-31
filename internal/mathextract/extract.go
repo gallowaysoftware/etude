@@ -14,8 +14,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/gallowaysoftware/textbook-to-audiobook/internal/rag"
-	"github.com/gallowaysoftware/textbook-to-audiobook/mathgen"
+	"github.com/gallowaysoftware/etude/internal/rag"
+	"github.com/gallowaysoftware/etude/mathgen"
 )
 
 // Config drives one extraction run.

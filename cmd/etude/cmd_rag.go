@@ -7,7 +7,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/gallowaysoftware/textbook-to-audiobook/internal/rag"
+	"github.com/gallowaysoftware/etude/internal/rag"
 )
 
 // ragCmd is the umbrella for the RAG-export subcommands: `rag run`
@@ -15,7 +15,7 @@ import (
 // directory, `rag push` ships the export to Open WebUI, and `rag anki`
 // packs flashcards.tsv into an Anki deck.
 //
-// The pipeline-level `textbook-to-audiobook run` produces the audio
+// The pipeline-level `etude run` produces the audio
 // + EPUB + study guide; the `rag` family is a strict downstream of
 // that — it reads processed_lessons.json (the merge_lessons output)
 // from a prior run and produces the retrieval-augmented artefacts.
@@ -26,7 +26,7 @@ func ragCmd() *cobra.Command {
 		Use:   "rag",
 		Short: "RAG-export subcommands (run / pack / push / anki).",
 		Long: `rag produces the retrieval-augmented exports from a prior
-textbook-to-audiobook run's processed_lessons.json:
+etude run's processed_lessons.json:
 
   rag run    — chunk + enrich + embed + study aids
   rag pack   — build chroma_db/ from chunks.jsonl
@@ -59,8 +59,8 @@ text), so editing a card's text and re-importing updates the existing
 card instead of orphaning the old one and adding a duplicate.
 
 Requires Python 3 + the genanki package. The Go side prefers
-~/.local/state/textbook-to-audiobook/rag-venv if it exists (same
-convention as rag pack); set TEXTBOOK_RAG_PYTHON to override.
+~/.local/state/etude/rag-venv if it exists (same
+convention as rag pack); set ETUDE_RAG_PYTHON to override.
 `,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return rag.PackAnki(cmd.Context(), rag.AnkiConfig{
@@ -94,7 +94,7 @@ func ragRunCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "run",
 		Short: "Chunk + enrich + embed a processed_lessons.json into a RAG export.",
-		Long: `run consumes processed_lessons.json from a prior textbook-to-audiobook
+		Long: `run consumes processed_lessons.json from a prior etude
 pipeline run and produces, under --out:
 
   chunks.jsonl       chunks + embeddings + per-prose-chunk LLM enrichment
@@ -165,8 +165,8 @@ any other tool that accepts a Chroma persistent client.
 
 Shells out to a bundled Python helper (chromadb.PersistentClient).
 Python 3 + the chromadb package must be on $PATH. The Go side prefers
-~/.local/state/textbook-to-audiobook/rag-venv if it exists; set
-TEXTBOOK_RAG_PYTHON to override.
+~/.local/state/etude/rag-venv if it exists; set
+ETUDE_RAG_PYTHON to override.
 `,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return rag.Pack(cmd.Context(), rag.PackConfig{

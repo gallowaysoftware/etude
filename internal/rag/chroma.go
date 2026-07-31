@@ -60,15 +60,15 @@ func Pack(ctx context.Context, cfg PackConfig) error {
 	// chromadb package available. PEP 668-protected Linuxes (Arch,
 	// recent Debian/Ubuntu) refuse `pip install` into system
 	// python; the convention this repo follows is a dedicated venv
-	// at ~/.local/state/textbook-to-audiobook/rag-venv. Honors
-	// $TEXTBOOK_RAG_PYTHON for callers who want to point at a
+	// at ~/.local/state/etude/rag-venv. Honors
+	// $ETUDE_RAG_PYTHON for callers who want to point at a
 	// different interpreter (uv tool's chromadb shim, a conda env,
 	// etc.).
 	python := "python3"
-	if env := os.Getenv("TEXTBOOK_RAG_PYTHON"); env != "" {
+	if env := os.Getenv("ETUDE_RAG_PYTHON"); env != "" {
 		python = env
 	} else if home, err := os.UserHomeDir(); err == nil {
-		candidate := filepath.Join(home, ".local", "state", "textbook-to-audiobook", "rag-venv", "bin", "python3")
+		candidate := filepath.Join(home, ".local", "state", "etude", "rag-venv", "bin", "python3")
 		if _, err := os.Stat(candidate); err == nil {
 			python = candidate
 		}
