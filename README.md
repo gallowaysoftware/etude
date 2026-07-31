@@ -41,6 +41,8 @@ etude run \
 
 Run time: ~5 hours on a single RTX 5090 for a 60-lesson module. Deliverables land in `$XDG_STATE_HOME/vamp/runs/etude_<timestamp>/`.
 
+Versioning note: `v0.1.0` and `v0.2.0` predate the rename and declare the old module path (`github.com/gallowaysoftware/textbook-to-audiobook`) — the Go module mirror and checksum database are immutable, so those two tags resolve only under that path. `v0.3.0` onward is the installable line under `github.com/gallowaysoftware/etude`.
+
 ## RAG export
 
 After a textbook run lands, the `rag` family of subcommands produces a portable retrieval-augmented dataset — chunked + embedded content + study aids — loadable in AnythingLLM, LangChain, LlamaIndex, or Open WebUI.

@@ -39,3 +39,17 @@ jobs:
         run: |
           go mod tidy
           git diff --exit-code go.mod go.sum
+
+  hygiene:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      # go.mod's module path must match the repo it is served from (#19);
+      # github.repository is authoritative in CI, the script falls back to
+      # the origin remote locally.
+      - name: module path matches remote
+        run: scripts/check-module-path.sh "${{ github.repository }}"
+      # excision-checklist step 12: the denylist lives as a tripwire so the
+      # next excision cannot regress.
+      - name: denylist tripwire
+        run: scripts/check-denylist.sh
