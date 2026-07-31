@@ -102,6 +102,12 @@ running daemon and the right capabilities mapped. Run the
 	// practice guide and a fresh-numbers drill (code-computed answers).
 	root.AddCommand(mathCmd())
 
+	// `drill` is the human terminal loop over the coach policy (the API
+	// and skill frontends drive the same one); `report` is its standing
+	// briefing.
+	root.AddCommand(drillCmd())
+	root.AddCommand(reportCmd())
+
 	// `eval` qualifies components against known-good fixtures before they
 	// are trusted with weeks of study (`eval grading` calibrates a
 	// candidate grader against golden answer/grade pairs).
