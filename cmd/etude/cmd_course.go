@@ -84,6 +84,7 @@ func courseCmd() *cobra.Command {
 // lessons lexically — none of which announce themselves at run time.
 func courseValidateCmd() *cobra.Command {
 	var strict bool
+	var courseDir string
 
 	cmd := &cobra.Command{
 		Use:   "validate [dir]",
@@ -100,8 +101,14 @@ corpus-wide prompt context. A clean validate means nothing disappears.
 Exits non-zero on errors. Warnings are advisory unless --strict.`,
 		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			dir := "."
+			dir := courseDir
+			if dir == "" {
+				dir = "."
+			}
 			if len(args) == 1 {
+				if courseDir != "" {
+					return fmt.Errorf("course given twice: positional %q and --course %q", args[0], courseDir)
+				}
 				dir = args[0]
 			}
 
@@ -149,6 +156,7 @@ Exits non-zero on errors. Warnings are advisory unless --strict.`,
 		},
 	}
 	cmd.Flags().BoolVar(&strict, "strict", false, "Treat warnings as errors.")
+	cmd.Flags().StringVar(&courseDir, "course", "", "Course directory (alternative to the positional argument, matching run --course).")
 	return cmd
 }
 
