@@ -102,6 +102,11 @@ running daemon and the right capabilities mapped. Run the
 	// practice guide and a fresh-numbers drill (code-computed answers).
 	root.AddCommand(mathCmd())
 
+	// `eval` qualifies components against known-good fixtures before they
+	// are trusted with weeks of study (`eval grading` calibrates a
+	// candidate grader against golden answer/grade pairs).
+	root.AddCommand(evalCmd())
+
 	// vamp.BuildRoot leaves SilenceErrors false, so Cobra prints the
 	// error from Execute AND the block below prints it again. Silence
 	// Cobra's copy and keep the prefixed reporter here as the single
