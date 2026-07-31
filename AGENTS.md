@@ -59,3 +59,30 @@ requirements` for the live contract and `doctor` to check the host. `rag pack`
 / `rag anki` shell out to Python (`chromadb` / `genanki`), preferring a venv at
 `~/.local/state/etude/rag-venv` (`ETUDE_RAG_PYTHON` to
 override).
+
+## Course manifest and validation
+
+- `internal/course/` owns `course.yaml` (the per-course manifest) and the
+  lesson-tree contract: `manifest.go` (types, load, validate),
+  `tree.go` (the tree scan), `scaffold.go` + `templates/` (what `init`
+  writes). Specs live in `docs/course-yaml.md` and
+  `docs/course-format.md` — change one and change the other.
+- **The validator's job is silent losses.** The pipeline drops a lesson
+  directory with no `lesson.md`, drops a `lesson.md` over 1 MiB, filters
+  oversized files out of batch prompt context, and orders lessons by
+  bytewise sort — none of which announce themselves at run time. A new
+  check earns its place by catching something that would otherwise
+  produce a quietly smaller course. Errors are for content that
+  vanishes; warnings are for degradation.
+- **Limits are mirrored from vamp, not invented here.** `maxLessonBytes`,
+  `batchReadBytes`, and `truncateBytes` in `tree.go` restate caps
+  enforced in vibe's template functions and the pipeline prompts. If
+  those move, these move.
+- **Ground format rules in measurement.** The `saq` preset's patterns
+  come from a real 189-lesson corpus; a plausible-looking guess
+  (`*_Unit_SAQ`) would have matched 18 of 189 directories. New presets
+  or rules cite what they were checked against.
+- `REPLACE-` values in a scaffolded manifest are a hard gate: validation
+  rejects them, so a half-filled course fails loudly instead of
+  producing generically-worded lectures. Placeholder VALUES use the
+  prefix; explanatory comments may mention it freely.

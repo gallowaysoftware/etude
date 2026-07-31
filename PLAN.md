@@ -107,6 +107,22 @@ carries assessment material; generate-second through critique/tournament
 plus staged review where it doesn't; authored-question modes unlock only
 when a frontier-class grader is configured, and always labeled.
 
+### Converge, don't one-shot
+
+Where a stage makes a judgement with a wide solution space — how to
+split a book into lessons, how to word a question, which of several
+lecture framings teaches best — a single pass is the wrong shape. The
+sibling repos in this family converged on the same answer: generate
+several candidates, critique them against stated criteria, score, and
+synthesize, then put a human gate in front of anything that becomes
+durable. It costs more tokens and produces materially better output
+than iterating on one draft.
+
+Applies to lesson structuring (Phase 3), generated questions (Phase 2),
+and lecture drafting. It does NOT apply to anything code can decide:
+question relaying, grading against a key, arithmetic, and scheduling
+stay deterministic. Convergence is for judgement, not for facts.
+
 ### Grading is the guarded leg
 
 "Grades you honestly" cannot rest on a prompt contract alone:
@@ -134,23 +150,39 @@ from prose.
 Each phase has one deliverable and an exit criterion in the user's
 units. Two public beats, one brand.
 
-### Phase 0 — names and contracts
+Individual work items live as GitHub issues labelled `phase-1` through
+`phase-5`; this document holds the shape and the exit criteria, the
+issue tracker holds the queue.
 
-- [ ] Registry/trademark sweep for `etude` (the repo renamed ahead of
-      it; a collision found now still costs only a second cheap rename
-      pre-launch).
-- [x] Rename this repo/module to `etude` (done 2026-07-31).
+### Phase 0 — names and contracts (done, 2026-07-31)
+
+- [x] Rename this repo/module to `etude`.
 - [x] Rename the memory service: recall → refrain (getrecall.ai
-      collision; done 2026-07-31).
-- [ ] Write `docs/course-format.md` (lesson interchange spec) +
+      collision).
+- [x] Registry/trademark sweep for `etude`. Verdict: keep it. The two
+      things that gate a CLI are clean — the binary name collides with
+      nothing in Homebrew, MacPorts, Debian, Ubuntu, Arch, AUR, or
+      nixpkgs, and crates.io is free. The only ETUDE trademark ever
+      filed for education software was cancelled in 2004; every live
+      one is cosmetics, wine, or beauty services — distant classes.
+      Accepted costs: npm and PyPI `etude` are permanently taken (use
+      `etude-cli` if ever needed), the GitHub org name is taken, and
+      the word is overloaded enough that we will always ship the
+      qualifier ("etude — the course compiler"). One name to re-check
+      before launch: an "Etude AI Inc." using the same word and the
+      same deliberate-practice metaphor, currently unsubstantiated.
+- [x] `docs/course-format.md` (lesson interchange spec) +
       `course validate`.
-- [ ] Write `docs/course-yaml.md` (manifest spec) + scaffold `init`.
-- [ ] Written leak-audit checklist for every future excision from
-      private repos (paths, hosts, personal content; fresh-history
-      extractions only).
+- [x] `docs/course-yaml.md` (manifest spec) + `init` scaffolding.
+- [x] `docs/excision-checklist.md` — the gate on every future extraction
+      from a private repo (tracked files only, fresh history, classify
+      before editing, mechanised greps).
+- [x] Tag v0.3.0. The pre-rename tags declare the old module path and
+      can never be installed under the new one (the module mirror is
+      immutable), so the new name needed an installable version.
 
-Exit: specs reviewed; naming locked; `init` scaffolds a course a
-stranger could fill in.
+Exit met: `etude init` scaffolds a course a stranger could fill in, and
+`etude course validate` refuses it until they do.
 
 ### Phase 1 — v0.1 "The Coach" (public beat one)
 
@@ -216,11 +248,32 @@ public beat, led by that recording.
 
 ### Phase 3 — v0.3 "The Intake"
 
-- [ ] `ingest`: EPUB/HTML/markdown-dir → lesson tree via pandoc +
-      deterministic heading segmentation; LLM-assisted lesson-boundary
-      proposals gated by staged review.
-- [ ] Figure extraction and placement specced explicitly (including
-      the SVG-only-source case the current study-guide path drops).
+The largest gap between this and "point it at what you want to learn".
+Everything downstream assumes a lesson tree, and most material is not
+organised into lessons — a book has chapters, an export has files, a
+wiki has pages. The reference corpus arrived pre-arranged only because
+it was scraped from a structured course; that was luck, not the normal
+case.
+
+Splitting source material into lessons is the highest-leverage
+judgement in the pipeline: a bad breakdown degrades the lectures, the
+study guide, and the question bank at once, and stays invisible until
+you listen to the output. So it is built as a converging quality
+problem rather than a file conversion.
+
+- [ ] `ingest`: EPUB/HTML/markdown-dir → lesson tree. Deterministic
+      first (pandoc, heading segmentation, figure extraction and
+      placement), then the structuring pass, then the human gate.
+- [ ] Structuring pass: propose several candidate breakdowns at
+      different granularities, critique each against explicit criteria
+      (does each lesson stand alone, is it one sitting's worth, do
+      prerequisites precede dependents, are figures with their
+      referring text), score, and synthesize the best boundaries.
+- [ ] Staged review of the proposed outline — accept / edit / reject
+      before any lesson tree is written.
+- [ ] Output passes `etude course validate` clean, including the rules
+      the reference corpus violated (padded, non-restarting lesson
+      numbers; one H1 per lesson; figures beside their text).
 - [ ] PDF stays excluded (pandoc cannot read it; OCR is a tarpit;
       DRM'd files are out of scope, stated in docs).
 
