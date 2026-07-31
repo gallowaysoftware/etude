@@ -104,9 +104,17 @@ running daemon and the right capabilities mapped. Run the
 
 	// `drill` is the human terminal loop over the coach policy (the API
 	// and skill frontends drive the same one); `report` is its standing
-	// briefing.
-	root.AddCommand(drillCmd())
+	// briefing. `drill api` is the JSON surface agent harnesses drive.
+	drill := drillCmd()
+	drill.AddCommand(drillAPICmd())
+	root.AddCommand(drill)
 	root.AddCommand(reportCmd())
+
+	// `serve` exposes the same coach as MCP tools (stdio for agent
+	// harnesses, streamable HTTP behind --addr); `skill` emits the
+	// file that teaches MCP-less harnesses to drive `drill api`.
+	root.AddCommand(serveCmd())
+	root.AddCommand(skillCmd())
 
 	// `eval` qualifies components against known-good fixtures before they
 	// are trusted with weeks of study (`eval grading` calibrates a
