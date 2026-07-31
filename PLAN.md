@@ -136,9 +136,10 @@ units. Two public beats, one brand.
 
 ### Phase 0 — names and contracts
 
-- [ ] Registry/trademark sweep for the product name; lock or rename.
-- [ ] Decide: rename this repo/module to the product name now (near-zero
-      users; the window closes as users accrue) or keep and wrap.
+- [ ] Registry/trademark sweep for `etude` (the repo renamed ahead of
+      it; a collision found now still costs only a second cheap rename
+      pre-launch).
+- [x] Rename this repo/module to `etude` (done 2026-07-31).
 - [x] Rename the memory service: recall → refrain (getrecall.ai
       collision; done 2026-07-31).
 - [ ] Write `docs/course-format.md` (lesson interchange spec) +
@@ -175,9 +176,11 @@ question-generation and Anki machinery that already lives here.
       minimum-grader guidance.
 - [ ] Endpoint config: everything text takes `--llm-url`/course.yaml
       endpoints — local router or any OpenAI-compatible provider.
-- [ ] Demo course with an authored question bank (see open decisions)
-      + fetch-nothing prebuilt artifacts on a release: sample M4B
-      chapters, EPUB, .apkg, a drill asciinema.
+- [ ] Demo course: author a small original course (~12 short lessons)
+      with its own SAQ-style question bank and model answers — the
+      guaranteed, redistributable extract-path happy path; doubles as
+      documentation. Plus fetch-nothing prebuilt artifacts on a
+      release: sample M4B chapters, EPUB, .apkg, a drill asciinema.
 - [ ] Maintainer kit: issue templates demanding `doctor` output,
       SUPPORT.md, published non-goals, Discussions on, weekly triage.
 
@@ -202,6 +205,8 @@ before any announcement. Soft first-person launch.
       retrieval surface without a database dependency.
 - [ ] Generated-question funnel: rag MC/SA enrichment →
       critique/tournament → staged accept/edit/reject → labeled bank.
+- [ ] Scheduler no-exam-date mode for open-ended domains (games,
+      lore): steady-state review instead of run-up-to-criterion.
 - [ ] `doctor` verifies slug agreement across course.yaml, refrain,
       and configured MCP endpoints.
 
@@ -281,19 +286,21 @@ archives. No video leg. No gamification. No feature-chasing cloud
 notebooks (mind maps, video overviews). No plugin API promise —
 integration points are the specs.
 
-## Open decisions
+## Decisions (resolved 2026-07-31)
 
-1. Rename this repo/module to the product name in Phase 0, or keep
-   `etude` and wrap. Renaming is cheapest now.
-2. Demo course: author a small original course (with its own question
-   bank) so the extract path has a guaranteed, redistributable happy
-   path — verified: no surveyed public corpus ships questions *with*
-   answer keys (e.g. OpenStax keeps model answers instructor-only).
-   Authoring is real one-time labor and a permanent artifact.
-3. Grading authority default: eval-harness + client-side grading
-   (lower floor) vs server-side grading by default (stronger claim,
-   heavier setup).
-4. Headline persona: lead with the exam-dated studier (sharpest story,
-   risks "cert-prep tool" compression) vs corpus-neutral framing. The
-   scheduler needs a no-exam-date mode either way for open-ended
-   domains.
+1. **Repo rename: done.** This repo is `gallowaysoftware/etude`
+   (formerly textbook-to-audiobook); GitHub redirects cover the old
+   name. Only the registry/trademark sweep remains open in Phase 0.
+2. **Demo course: author it.** A small original course with its own
+   question bank and model answers — no surveyed public corpus ships
+   questions *with* answer keys (e.g. OpenStax keeps model answers
+   instructor-only), so the extract path's happy path must be owned
+   material. One-time labor, permanent artifact, doubles as docs.
+3. **Grading default: eval harness + client-side grader.** Golden
+   answer/grade pairs and `eval grading` qualify whatever model the
+   user brings, with a documented minimum-grader floor; server-side
+   grading stays an option flag, not the default.
+4. **Headline persona: the exam-dated studier.** The launch story is
+   the exam run-up; games and open-ended domains ride the same
+   machinery ("the exam is optional; the loop isn't"), and the
+   scheduler grows a no-exam-date mode in Phase 2.
