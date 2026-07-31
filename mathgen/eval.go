@@ -14,6 +14,7 @@ package mathgen
 import (
 	"fmt"
 	"math"
+	"strconv"
 	"strings"
 	"unicode"
 )
@@ -267,8 +268,14 @@ func tokenize(s string) []token {
 				}
 			}
 			text := string(rs[i:j])
-			var f float64
-			fmt.Sscanf(text, "%g", &f)
+			// The scanner above already accepted only digits, one
+			// decimal point, and an optional exponent, so the only way
+			// ParseFloat fails here is overflow — where it still returns
+			// the correctly-signed infinity. Dropping a parse error
+			// silently would let a malformed literal become 0 and yield a
+			// confidently wrong answer, which is the one failure this
+			// engine exists to prevent.
+			f, _ := strconv.ParseFloat(text, 64)
 			toks = append(toks, token{kind: tokNum, text: text, num: f})
 			i = j
 		case c == '_' || unicode.IsLetter(c):
