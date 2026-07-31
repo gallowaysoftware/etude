@@ -174,8 +174,8 @@ func TestMasteredReverificationIntervalsExpand(t *testing.T) {
 	now := time.Date(2026, 1, 1, 12, 0, 0, 0, time.UTC)
 
 	// Master the item, then keep passing re-verifications: 1, 2, 4 days.
-	it := rec(t, s, "mash ph", "2", 5, 3, "", now)
-	it = rec(t, s, "mash ph", "2", 5, 3, "", now.Add(time.Hour))
+	rec(t, s, "mash ph", "2", 5, 3, "", now)
+	it := rec(t, s, "mash ph", "2", 5, 3, "", now.Add(time.Hour))
 	if got := it.Due.Sub(now.Add(time.Hour)); got != 24*time.Hour {
 		t.Fatalf("first re-verification should be 1 day out, got %s", got)
 	}

@@ -5,6 +5,7 @@ linters:
   enable:
     - bodyclose
     - misspell
+    - modernize
     - unconvert
   exclusions:
     presets:

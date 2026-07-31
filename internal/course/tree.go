@@ -259,7 +259,7 @@ func (m *Manifest) checkTitle(rep *Report, lessonFile string) {
 	// small prefix keeps validation cheap on a large corpus.
 	buf := make([]byte, 4096)
 	n, _ := f.Read(buf)
-	for _, line := range strings.Split(string(buf[:n]), "\n") {
+	for line := range strings.SplitSeq(string(buf[:n]), "\n") {
 		line = strings.TrimSpace(line)
 		if line == "" {
 			continue

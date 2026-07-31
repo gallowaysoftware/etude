@@ -36,7 +36,7 @@ func TestScaffoldRoundTrip(t *testing.T) {
 	filled := replacePlaceholders(string(body))
 	// Only values matter: the manifest's own comments mention the
 	// placeholder prefix by design, explaining the rule to the author.
-	for _, line := range strings.Split(filled, "\n") {
+	for line := range strings.SplitSeq(filled, "\n") {
 		if !strings.HasPrefix(strings.TrimSpace(line), "#") && strings.Contains(line, placeholderPrefix) {
 			t.Fatalf("test helper left a placeholder value behind: %q", line)
 		}
@@ -72,9 +72,9 @@ func TestScaffoldRoundTrip(t *testing.T) {
 // the way an author would.
 func replacePlaceholders(body string) string {
 	var out []string
-	for _, line := range strings.Split(body, "\n") {
-		if idx := strings.Index(line, placeholderPrefix); idx >= 0 && !strings.HasPrefix(strings.TrimSpace(line), "#") {
-			out = append(out, line[:idx]+"filled in by the author")
+	for line := range strings.SplitSeq(body, "\n") {
+		if before, _, ok := strings.Cut(line, placeholderPrefix); ok && !strings.HasPrefix(strings.TrimSpace(line), "#") {
+			out = append(out, before+"filled in by the author")
 			continue
 		}
 		out = append(out, line)

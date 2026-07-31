@@ -2,6 +2,7 @@ package mathgen
 
 import (
 	"fmt"
+	"maps"
 	"os"
 	"regexp"
 	"sort"
@@ -282,9 +283,7 @@ func Validate(c *Catalog) []ValidationIssue {
 		// The correctness gate: reproduce the curriculum's worked answers.
 		for i, ex := range e.Examples {
 			exEnv := e.constEnv()
-			for k, val := range ex.Inputs {
-				exEnv[k] = val
-			}
+			maps.Copy(exEnv, ex.Inputs)
 			got, err := Eval(e.Expr, exEnv)
 			if err != nil {
 				add(fmt.Sprintf("example %d does not compute: %v", i, err))

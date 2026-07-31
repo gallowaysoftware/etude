@@ -106,7 +106,7 @@ func TestSampleRespectsRangesAndDeterminism(t *testing.T) {
 	e := titratableAcidity()
 	r1 := rand.New(rand.NewSource(42))
 	r2 := rand.New(rand.NewSource(42))
-	for i := 0; i < 200; i++ {
+	for range 200 {
 		in := e.Sample(r1)
 		if in["V_NaOH"] < 5 || in["V_NaOH"] > 20 {
 			t.Fatalf("V_NaOH %v out of [5,20]", in["V_NaOH"])

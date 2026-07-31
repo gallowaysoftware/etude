@@ -224,7 +224,7 @@ func decomposePoints(answer string) []string {
 	}
 	// A prose answer decomposes by paragraph instead — one point per
 	// line would shred sentences into ungradeable fragments.
-	for _, para := range strings.Split(answer, "\n\n") {
+	for para := range strings.SplitSeq(answer, "\n\n") {
 		if para = strings.TrimSpace(para); para != "" {
 			points = append(points, para)
 		}

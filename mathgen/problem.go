@@ -2,6 +2,7 @@ package mathgen
 
 import (
 	"fmt"
+	"maps"
 	"math"
 	"math/rand"
 	"sort"
@@ -105,9 +106,7 @@ func (e Equation) Sample(rng *rand.Rand) map[string]float64 {
 // env merges sampled inputs with the equation's constants.
 func (e Equation) env(inputs map[string]float64) map[string]float64 {
 	env := e.constEnv()
-	for k, v := range inputs {
-		env[k] = v
-	}
+	maps.Copy(env, inputs)
 	return env
 }
 

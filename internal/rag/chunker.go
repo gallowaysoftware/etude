@@ -101,7 +101,7 @@ func chunkParagraphs(text string, maxChars int) []string {
 		}
 		cur.Reset()
 	}
-	for _, para := range strings.Split(strings.TrimSpace(text), "\n\n") {
+	for para := range strings.SplitSeq(strings.TrimSpace(text), "\n\n") {
 		para = strings.TrimSpace(para)
 		if para == "" {
 			continue

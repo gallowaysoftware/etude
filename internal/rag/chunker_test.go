@@ -1,6 +1,9 @@
 package rag
 
-import "testing"
+import (
+	"slices"
+	"testing"
+)
 
 func TestChunkParagraphs_RespectsBudget(t *testing.T) {
 	text := "Para one.\n\nPara two is medium length.\n\nPara three is also medium length here."
@@ -12,15 +15,7 @@ func TestChunkParagraphs_RespectsBudget(t *testing.T) {
 		// Single paragraphs larger than budget are emitted alone —
 		// that's documented behavior, not a budget violation.
 		if len(c) > 30 {
-			isWholePara := false
-			// Find this chunk in original; if it's a whole single
-			// paragraph that exceeded budget, the over-size is OK.
-			for _, p := range []string{"Para one.", "Para two is medium length.", "Para three is also medium length here."} {
-				if c == p {
-					isWholePara = true
-					break
-				}
-			}
+			isWholePara := slices.Contains([]string{"Para one.", "Para two is medium length.", "Para three is also medium length here."}, c)
 			if !isWholePara {
 				t.Errorf("chunk over budget AND not a single paragraph: %q (len %d)", c, len(c))
 			}
