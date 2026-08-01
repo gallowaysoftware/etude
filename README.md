@@ -68,6 +68,8 @@ etude eval grading --course examples/demo-course \
   --golden examples/demo-course/eval/grading-golden.jsonl
 ```
 
+Minimum-grader guidance, measured with the harness (your numbers will vary by quant and prompt budget): **qwen3.6-35b-a3b Q4_K_XL passes with thinking enabled** (within-±1 91.3%, mean signed error −0.43, mildly strict) and **fails with thinking disabled** (within-±1 82.6% — strict on partial-credit omissions). `ETUDE_LLM_EXTRA_BODY='{"chat_template_kwargs":{"enable_thinking":false}}'` buys a 6x latency cut; use it only if your model still passes with it set. A mildly strict grader is safe (a miss just gets re-drilled); a lenient one is the failure to rule out (blindspots silently graduate). Frontier-class endpoints pass comfortably and are the right default when one is configured.
+
 The text legs (drill, grading, eval) need only an OpenAI-compatible endpoint — a local router or an external key; no vibe daemon. Audio, vision, and covers remain local-stack. Learner state is greppable JSON at `<course>/.etude/study.json`, single-writer locked. How a corpus marks its own questions is declared in `course.yaml` (`assessment_markers`; see [docs/course-format.md](docs/course-format.md#assessment-material)).
 
 ## RAG export
