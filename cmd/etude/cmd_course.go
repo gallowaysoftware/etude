@@ -7,7 +7,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/gallowaysoftware/etude/internal/course"
+	"github.com/gallowaysoftware/etude/course"
 )
 
 // initCmd scaffolds a new course directory. It is the first command a

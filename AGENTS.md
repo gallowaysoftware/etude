@@ -21,6 +21,12 @@ as `go:embed` assets.
 - `pipeline/` — the DAG (`pipeline.go`) and the fork-tunable `Config`
   (`config.go`). Public so external forks can import it. Embedded prompts live
   under `pipeline/prompts/`, ComfyUI graphs under `pipeline/workflows/`.
+- `course/`, `qbank/`, `study/`, `coach/`, `grade/` — the drill: the
+  course.yaml contract, the question-bank extractor, the
+  successive-relearning store, the scheduling policy + coach prompt, and
+  the grader interface. Public so the private predecessor (and forks)
+  consume them as dependencies — that is what keeps the excision honest
+  (docs/excision-checklist.md, "After landing").
 - `internal/rag/` — the retrieval-augmented export (chunk → enrich → embed →
   study aids → Anki/Chroma/Open WebUI). Strict downstream of a pipeline run.
 
@@ -62,7 +68,7 @@ override).
 
 ## Course manifest and validation
 
-- `internal/course/` owns `course.yaml` (the per-course manifest) and the
+- `course/` owns `course.yaml` (the per-course manifest) and the
   lesson-tree contract: `manifest.go` (types, load, validate),
   `tree.go` (the tree scan), `scaffold.go` + `templates/` (what `init`
   writes). Specs live in `docs/course-yaml.md` and

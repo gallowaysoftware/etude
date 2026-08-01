@@ -13,9 +13,9 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/gallowaysoftware/etude/internal/coach"
-	"github.com/gallowaysoftware/etude/internal/grade"
-	"github.com/gallowaysoftware/etude/internal/qbank"
+	"github.com/gallowaysoftware/etude/coach"
+	"github.com/gallowaysoftware/etude/grade"
+	"github.com/gallowaysoftware/etude/qbank"
 )
 
 // errDone ends the session cleanly: the learner typed 'quit' or stdin

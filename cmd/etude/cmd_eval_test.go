@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gallowaysoftware/etude/internal/grade"
+	"github.com/gallowaysoftware/etude/grade"
 )
 
 // fakeGrader returns scripted verdicts keyed by the question prompt.

@@ -4,7 +4,7 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/gallowaysoftware/etude/internal/course"
+	"github.com/gallowaysoftware/etude/course"
 )
 
 // SystemPrompt renders the drill coach's system prompt from the course

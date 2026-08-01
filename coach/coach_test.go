@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gallowaysoftware/etude/internal/course"
-	"github.com/gallowaysoftware/etude/internal/qbank"
-	"github.com/gallowaysoftware/etude/internal/study"
+	"github.com/gallowaysoftware/etude/course"
+	"github.com/gallowaysoftware/etude/qbank"
+	"github.com/gallowaysoftware/etude/study"
 )
 
 var t0 = time.Date(2026, 2, 1, 10, 0, 0, 0, time.UTC)

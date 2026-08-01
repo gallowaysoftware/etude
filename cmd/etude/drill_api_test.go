@@ -13,8 +13,8 @@ import (
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"github.com/gallowaysoftware/etude/internal/coach"
-	"github.com/gallowaysoftware/etude/internal/grade"
+	"github.com/gallowaysoftware/etude/coach"
+	"github.com/gallowaysoftware/etude/grade"
 )
 
 var drillT0 = time.Date(2026, 2, 1, 10, 0, 0, 0, time.UTC)

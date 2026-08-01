@@ -28,8 +28,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gallowaysoftware/etude/internal/qbank"
-	"github.com/gallowaysoftware/etude/internal/study"
+	"github.com/gallowaysoftware/etude/qbank"
+	"github.com/gallowaysoftware/etude/study"
 )
 
 // Coach couples the question bank to the study store.

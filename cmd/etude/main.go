@@ -20,7 +20,7 @@ import (
 
 	"github.com/gallowaysoftware/vibe/vamp"
 
-	"github.com/gallowaysoftware/etude/internal/course"
+	"github.com/gallowaysoftware/etude/course"
 	"github.com/gallowaysoftware/etude/pipeline"
 )
 

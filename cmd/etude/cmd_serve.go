@@ -14,8 +14,8 @@ import (
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/spf13/cobra"
 
-	"github.com/gallowaysoftware/etude/internal/coach"
-	"github.com/gallowaysoftware/etude/internal/grade"
+	"github.com/gallowaysoftware/etude/coach"
+	"github.com/gallowaysoftware/etude/grade"
 )
 
 // drillServer adapts the shared drill contract (drill_api.go) to MCP

@@ -13,10 +13,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/gallowaysoftware/etude/internal/coach"
-	"github.com/gallowaysoftware/etude/internal/grade"
-	"github.com/gallowaysoftware/etude/internal/qbank"
-	"github.com/gallowaysoftware/etude/internal/study"
+	"github.com/gallowaysoftware/etude/coach"
+	"github.com/gallowaysoftware/etude/grade"
+	"github.com/gallowaysoftware/etude/qbank"
+	"github.com/gallowaysoftware/etude/study"
 )
 
 // scheduleView is the retrieval-practice state attached to review and

@@ -6,11 +6,11 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/gallowaysoftware/etude/internal/coach"
-	"github.com/gallowaysoftware/etude/internal/course"
-	"github.com/gallowaysoftware/etude/internal/grade"
-	"github.com/gallowaysoftware/etude/internal/qbank"
-	"github.com/gallowaysoftware/etude/internal/study"
+	"github.com/gallowaysoftware/etude/coach"
+	"github.com/gallowaysoftware/etude/course"
+	"github.com/gallowaysoftware/etude/grade"
+	"github.com/gallowaysoftware/etude/qbank"
+	"github.com/gallowaysoftware/etude/study"
 )
 
 // drillDeps bundles everything a drill frontend needs. Close releases

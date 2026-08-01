@@ -8,7 +8,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/gallowaysoftware/etude/internal/course"
+	"github.com/gallowaysoftware/etude/course"
 )
 
 // skillCmd emits the drill-coach skill for agent harnesses with no MCP.

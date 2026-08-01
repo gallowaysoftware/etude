@@ -12,8 +12,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/gallowaysoftware/etude/internal/grade"
-	"github.com/gallowaysoftware/etude/internal/qbank"
+	"github.com/gallowaysoftware/etude/grade"
+	"github.com/gallowaysoftware/etude/qbank"
 )
 
 // Pass thresholds for the grader qualification verdict. These are

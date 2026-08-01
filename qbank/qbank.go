@@ -25,7 +25,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/gallowaysoftware/etude/internal/course"
+	"github.com/gallowaysoftware/etude/course"
 )
 
 // Difficulty mirrors the asterisk tier convention: short & retrospective,

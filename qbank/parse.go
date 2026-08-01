@@ -6,7 +6,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/gallowaysoftware/etude/internal/course"
+	"github.com/gallowaysoftware/etude/course"
 )
 
 // markers is the compiled form of course.Assessments: heading templates

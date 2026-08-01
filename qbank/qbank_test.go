@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gallowaysoftware/etude/internal/course"
+	"github.com/gallowaysoftware/etude/course"
 )
 
 // writeCourse scaffolds a synthetic course tree and loads its manifest.
