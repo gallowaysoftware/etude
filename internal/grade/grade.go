@@ -58,6 +58,11 @@ type ChatClient struct {
 	BaseURL string // e.g. "http://localhost:8080/v1" — no trailing slash needed
 	APIKey  string // optional; sent as a bearer token when set
 	Model   string
+	// ExtraBody merges into the request object, for endpoint-specific
+	// knobs no portable API covers — e.g. {"chat_template_kwargs":
+	// {"enable_thinking": false}} to bound a reasoning model's thinking
+	// (a 6x latency cut measured on qwen3.6-35b-a3b via llama.cpp).
+	ExtraBody map[string]any
 	// HTTPClient is overridable for tests; nil uses a sane default.
 	HTTPClient *http.Client
 }
@@ -66,7 +71,10 @@ func (c *ChatClient) http() *http.Client {
 	if c.HTTPClient != nil {
 		return c.HTTPClient
 	}
-	return &http.Client{Timeout: 120 * time.Second}
+	// Grading is a judgement call that a reasoning model may think
+	// through for minutes under parallel load; a short client timeout
+	// turns "slow but correct" into a spurious error.
+	return &http.Client{Timeout: 10 * time.Minute}
 }
 
 // systemPrompt is the grading contract. It is deliberately strict about
@@ -102,14 +110,18 @@ func (c *ChatClient) Grade(ctx context.Context, req Request) (Verdict, error) {
 	}
 	user.WriteString("\nLEARNER'S ANSWER:\n" + req.Learner + "\n")
 
-	body, err := json.Marshal(map[string]any{
+	bodyMap := map[string]any{
 		"model": c.Model,
 		"messages": []map[string]string{
 			{"role": "system", "content": systemPrompt},
 			{"role": "user", "content": user.String()},
 		},
 		"temperature": 0,
-	})
+	}
+	for k, v := range c.ExtraBody {
+		bodyMap[k] = v
+	}
+	body, err := json.Marshal(bodyMap)
 	if err != nil {
 		return Verdict{}, err
 	}

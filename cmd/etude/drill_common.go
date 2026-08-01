@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -78,7 +79,10 @@ func resolveEndpoint(flagURL, flagKey, flagModel string) endpointConfig {
 }
 
 // grader builds the chat grader, or errors with setup guidance when no
-// endpoint is configured.
+// endpoint is configured. ETUDE_LLM_EXTRA_BODY (a JSON object) merges
+// endpoint-specific request fields — e.g.
+// {"chat_template_kwargs":{"enable_thinking":false}} to bound a
+// reasoning model's thinking time.
 func (e endpointConfig) grader() (*grade.ChatClient, error) {
 	if e.URL == "" {
 		return nil, fmt.Errorf("no LLM endpoint configured: pass --llm-url or set ETUDE_LLM_URL (any OpenAI-compatible endpoint, local router or external provider)")
@@ -86,7 +90,15 @@ func (e endpointConfig) grader() (*grade.ChatClient, error) {
 	if e.Model == "" {
 		return nil, fmt.Errorf("no grader model configured: pass --llm-model or set ETUDE_LLM_MODEL")
 	}
-	return &grade.ChatClient{BaseURL: e.URL, APIKey: e.APIKey, Model: e.Model}, nil
+	c := &grade.ChatClient{BaseURL: e.URL, APIKey: e.APIKey, Model: e.Model}
+	if raw := os.Getenv("ETUDE_LLM_EXTRA_BODY"); raw != "" {
+		var extra map[string]any
+		if err := json.Unmarshal([]byte(raw), &extra); err != nil {
+			return nil, fmt.Errorf("ETUDE_LLM_EXTRA_BODY is not a JSON object: %w", err)
+		}
+		c.ExtraBody = extra
+	}
+	return c, nil
 }
 
 func firstNonEmpty(v ...string) string {
