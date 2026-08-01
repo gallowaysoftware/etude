@@ -165,7 +165,7 @@ func TestDrillSession(t *testing.T) {
 	// ends the session.
 	in := strings.NewReader("alpha answer one attempt\n.\n9\nnope\n2\nquit\n")
 	var out bytes.Buffer
-	if err := runDrill(context.Background(), deps, fg, in, &out, ""); err != nil {
+	if err := runDrill(context.Background(), deps, fg, in, &out, "", nil); err != nil {
 		t.Fatalf("runDrill: %v", err)
 	}
 	s := out.String()
@@ -258,7 +258,7 @@ func TestDrillEOFBeforeConfidenceRecordsNothing(t *testing.T) {
 	// confidence prompt is answered: the item must NOT be recorded.
 	in := strings.NewReader("half an answer\n.\n")
 	var out bytes.Buffer
-	if err := runDrill(context.Background(), deps, fg, in, &out, ""); err != nil {
+	if err := runDrill(context.Background(), deps, fg, in, &out, "", nil); err != nil {
 		t.Fatalf("runDrill: %v", err)
 	}
 	if len(fg.requests) != 0 {
@@ -280,7 +280,7 @@ func TestDrillEOFDuringAnswerRecordsNothing(t *testing.T) {
 	// Stdin closes mid-answer, before even the '.' terminator.
 	in := strings.NewReader("half an answer\n")
 	var out bytes.Buffer
-	if err := runDrill(context.Background(), deps, fg, in, &out, ""); err != nil {
+	if err := runDrill(context.Background(), deps, fg, in, &out, "", nil); err != nil {
 		t.Fatalf("runDrill: %v", err)
 	}
 	if rep := deps.Coach.Report("", time.Now()); rep.Tracked != 0 {

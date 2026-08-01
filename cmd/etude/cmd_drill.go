@@ -15,6 +15,7 @@ import (
 
 	"github.com/gallowaysoftware/etude/coach"
 	"github.com/gallowaysoftware/etude/grade"
+	"github.com/gallowaysoftware/etude/internal/refrain"
 	"github.com/gallowaysoftware/etude/qbank"
 )
 
@@ -60,6 +61,10 @@ ETUDE_LLM_API_KEY / ETUDE_LLM_MODEL. No vibe daemon is required.`,
 				return err
 			}
 			defer deps.Close()
+			// Probe memory once: unreachable refrain costs one stderr note
+			// here and silence everywhere else — never a failed drill.
+			em := connectRefrain(cmd.Context(), os.Stderr, deps.Manifest.MemorySlug())
+			defer func() { _ = em.Close() }()
 			// Resolve the grader up front: a missing endpoint is a
 			// startup error with setup guidance, not a mid-loop surprise
 			// after the learner has already typed an answer.
@@ -67,7 +72,7 @@ ETUDE_LLM_API_KEY / ETUDE_LLM_MODEL. No vibe daemon is required.`,
 			if err != nil {
 				return err
 			}
-			return runDrill(cmd.Context(), deps, g, os.Stdin, cmd.OutOrStdout(), module)
+			return runDrill(cmd.Context(), deps, g, os.Stdin, cmd.OutOrStdout(), module, em)
 		},
 	}
 	f := cmd.Flags()
@@ -86,6 +91,7 @@ func reportCmd() *cobra.Command {
 	var (
 		courseDir string
 		module    string
+		publish   bool
 	)
 	cmd := &cobra.Command{
 		Use:   "report",
@@ -93,26 +99,65 @@ func reportCmd() *cobra.Command {
 		Long: `report summarizes the study store against the question bank:
 overall progress, a per-unit coverage table (questions / attempted /
 mastered / %), and the outstanding blindspots — confident-but-wrong
-items, the most dangerous quadrant — with the note from their last attempt.`,
+items, the most dangerous quadrant — with the note from their last attempt.
+
+--publish also flushes the mastery digest to refrain (ETUDE_REFRAIN_URL,
+default http://127.0.0.1:14010): the durable state/mastery.json the
+tutor's digest renders, plus the interim session-log line. Unlike the
+ambient drill/serve emission, an explicit publish that fails returns an
+error.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			deps, err := loadCoach(courseDir)
 			if err != nil {
 				return err
 			}
 			defer deps.Close()
-			return runReport(deps, cmd.OutOrStdout(), module)
+			if err := runReport(deps, cmd.OutOrStdout(), module); err != nil {
+				return err
+			}
+			if !publish {
+				return nil
+			}
+			base := refrainBase()
+			ctx, cancel := context.WithTimeout(cmd.Context(), emitTimeout)
+			defer cancel()
+			c, err := refrain.Dial(ctx, base)
+			if err != nil {
+				return fmt.Errorf("refrain memory unreachable at %s: %w", base, err)
+			}
+			defer func() { _ = c.Close() }()
+			em := refrain.NewEmitter(c, deps.Manifest.MemorySlug())
+			if err := publishDigest(ctx, em, deps); err != nil {
+				return fmt.Errorf("publish mastery digest: %w", err)
+			}
+			fmt.Fprintf(cmd.OutOrStdout(), "\nPublished mastery digest to %s (expert %s).\n",
+				base, deps.Manifest.MemorySlug())
+			return nil
 		},
 	}
 	f := cmd.Flags()
 	f.StringVar(&courseDir, "course", "", "Course directory (or course.yaml) to report on.")
 	f.StringVar(&module, "module", "", "Scope to one module (e.g. 2, M2, module_2); empty reports everything.")
+	f.BoolVar(&publish, "publish", false, "Also flush the mastery digest to refrain (ETUDE_REFRAIN_URL).")
 	_ = cmd.MarkFlagRequired("course")
 	return cmd
 }
 
 // runDrill is the REPL proper, decoupled from cobra so tests can drive
-// it with scripted stdin and capture stdout.
-func runDrill(ctx context.Context, deps *drillDeps, g grade.Grader, in io.Reader, out io.Writer, module string) error {
+// it with scripted stdin and capture stdout. On any clean exit (quit,
+// EOF, or an exhausted bank) with at least one recorded attempt, it
+// publishes the mastery digest to refrain; em may be nil (memory down),
+// in which case emission silently skips.
+func runDrill(ctx context.Context, deps *drillDeps, g grade.Grader, in io.Reader, out io.Writer, module string, em *refrain.Emitter) (err error) {
+	attempts := 0
+	defer func() {
+		// Session end is the REPL's one emission point: per-answer
+		// writes would spam git commits in the memory repo. A dirty
+		// exit (real I/O or store error) skips the flush.
+		if err == nil && attempts > 0 {
+			emitDigest(em, deps, os.Stderr)
+		}
+	}()
 	sc := bufio.NewScanner(in)
 	// Answers are multi-line prose; the default 64 KiB token cap would
 	// silently truncate a long one.
@@ -183,6 +228,7 @@ func runDrill(ctx context.Context, deps *drillDeps, g grade.Grader, in io.Reader
 		if _, err := deps.Coach.Record(q.ID, module, v.Quality, conf, note, time.Now()); err != nil {
 			return fmt.Errorf("record attempt: %w", err)
 		}
+		attempts++
 		fmt.Fprintf(out, "\n(recorded: quality %d, confidence %d)\n", v.Quality, conf)
 	}
 }
