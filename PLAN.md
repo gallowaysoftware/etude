@@ -223,10 +223,10 @@ before any announcement. Soft first-person launch.
 
 ### Phase 2 — v0.2 "The Loop" (public beat two)
 
-- [ ] Mastery digest → refrain session log (interim channel).
-- [ ] refrain: structured-state API + dedicated mastery digest slot;
+- [x] Mastery digest → refrain session log (interim channel).
+- [x] refrain: structured-state API + dedicated mastery digest slot;
       ship its documented-but-missing Claude Code SessionStart hook.
-- [ ] Expert prompt rendered from course.yaml: corpus-is-true /
+- [x] Expert prompt rendered from course.yaml: corpus-is-true /
       memory-is-decided epistemics, the disagreement protocol (check
       recorded rationale before contradicting; say plainly when the
       curriculum says you're wrong, with the citation), read-only
