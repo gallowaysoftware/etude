@@ -66,6 +66,60 @@ func TestExpertServerReadOnlyTools(t *testing.T) {
 	}
 }
 
+// TestGatedWriteOverMCP registers a write tool the only way the expert
+// toolset allows — newGatedWrite — and drives the two-call pattern over
+// the real protocol path: the unconfirmed call is a tool error carrying
+// a token, the confirmed re-issue executes.
+func TestGatedWriteOverMCP(t *testing.T) {
+	gate := newConfirmGate()
+	executed := 0
+	w := newGatedWrite(gate, &mcp.Tool{
+		Name:        "test_write",
+		Description: "test double for a state-mutating expert tool",
+	}, func(_ context.Context, _ *mcp.CallToolRequest, _ gateArgs) (*mcp.CallToolResult, string, error) {
+		executed++
+		return nil, "done", nil
+	})
+	srv := mcp.NewServer(&mcp.Implementation{Name: "gate-test", Version: "dev"}, nil)
+	w.reg(srv)
+	cs := connectServer(t, srv)
+
+	// Unconfirmed: a tool error whose message carries the token.
+	res, err := cs.CallTool(context.Background(), &mcp.CallToolParams{
+		Name:      "test_write",
+		Arguments: map[string]any{"v": 1},
+	})
+	if err != nil {
+		t.Fatalf("call test_write: %v", err)
+	}
+	if !res.IsError {
+		t.Fatalf("unconfirmed write must be a tool error, got %+v", res)
+	}
+	m := confirmTokenRe.FindStringSubmatch(toolErrorText(res))
+	if m == nil {
+		t.Fatalf("refusal must carry a confirmation token, got: %s", toolErrorText(res))
+	}
+	if executed != 0 {
+		t.Fatal("unconfirmed call must not execute the handler")
+	}
+
+	// Confirmed re-issue: executes exactly once.
+	token := m[1]
+	res, err = cs.CallTool(context.Background(), &mcp.CallToolParams{
+		Name:      "test_write",
+		Arguments: map[string]any{"v": 1, "confirm": token},
+	})
+	if err != nil {
+		t.Fatalf("confirmed call test_write: %v", err)
+	}
+	if res.IsError {
+		t.Fatalf("confirmed call must succeed, got: %s", toolErrorText(res))
+	}
+	if executed != 1 {
+		t.Fatalf("handler ran %d times, want exactly 1", executed)
+	}
+}
+
 var confirmTokenRe = regexp.MustCompile(`"confirm": "([0-9a-f]+)"`)
 
 type gateArgs struct {
