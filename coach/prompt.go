@@ -15,23 +15,36 @@ import (
 // the subject; the manifest's labels are what make the coach sound like
 // it is about the course's material.
 func SystemPrompt(m *course.Manifest) string {
-	var sb strings.Builder
-	err := promptTmpl.Execute(&sb, struct {
-		Title      string
-		Subject    string
-		Program    string
-		Persona    string
-		Assessment string
-	}{
+	return renderPrompt(promptTmpl, labelsOf(m))
+}
+
+// promptLabels carries the manifest's four domain labels (plus the
+// title) into a prompt template. They are the entire domain identity
+// of a course — every prompt skins itself from these and nothing else.
+type promptLabels struct {
+	Title      string
+	Subject    string
+	Program    string
+	Persona    string
+	Assessment string
+}
+
+func labelsOf(m *course.Manifest) promptLabels {
+	return promptLabels{
 		Title:      m.Title,
 		Subject:    m.Subject,
 		Program:    m.Program,
 		Persona:    m.Persona,
 		Assessment: m.Assessment,
-	})
-	if err != nil {
-		// The template is a compile-time constant; a render error means a
-		// programming bug, and a half-written prompt is worse than a panic.
+	}
+}
+
+// renderPrompt executes a prompt template. The templates are
+// compile-time constants; a render error means a programming bug, and
+// a half-written prompt is worse than a panic.
+func renderPrompt(t *template.Template, data any) string {
+	var sb strings.Builder
+	if err := t.Execute(&sb, data); err != nil {
 		panic(err)
 	}
 	return sb.String()
