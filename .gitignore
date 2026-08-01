@@ -15,3 +15,10 @@
 .idea/
 .vscode/
 .DS_Store
+
+# drill learner state lives in the course directory but belongs to the
+# learner, not the repo
+.etude/
+
+# go build ./cmd/etude lands here
+/etude
