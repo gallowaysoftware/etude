@@ -18,6 +18,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"maps"
 	"net/http"
 	"strings"
 	"time"
@@ -118,9 +119,7 @@ func (c *ChatClient) Grade(ctx context.Context, req Request) (Verdict, error) {
 		},
 		"temperature": 0,
 	}
-	for k, v := range c.ExtraBody {
-		bodyMap[k] = v
-	}
+	maps.Copy(bodyMap, c.ExtraBody)
 	body, err := json.Marshal(bodyMap)
 	if err != nil {
 		return Verdict{}, err
